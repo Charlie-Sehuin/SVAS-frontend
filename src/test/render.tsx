@@ -9,7 +9,12 @@ import type { Rol } from '../shared/types/enums';
 /** Render con los providers de la app. `roles` simula la sesión sin Supabase. */
 export function renderConProviders(
   ui: ReactElement,
-  { roles = [], ruta = '/', ...opciones }: RenderOptions & { roles?: Rol[]; ruta?: string } = {},
+  {
+    roles = [],
+    ruta = '/',
+    auth: authExtra,
+    ...opciones
+  }: RenderOptions & { roles?: Rol[]; ruta?: string; auth?: Partial<AuthContextValue> } = {},
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   const auth: AuthContextValue = {
@@ -20,6 +25,8 @@ export function renderConProviders(
     nombre: roles.length ? 'Usuario Prueba' : null,
     signIn: async () => ({ roles }),
     signOut: async () => {},
+    cambiarPassword: async () => {},
+    ...authExtra,
   };
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <ThemeProvider>

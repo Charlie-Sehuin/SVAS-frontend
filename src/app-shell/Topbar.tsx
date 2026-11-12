@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Menu, Moon, Search, Sun, User } from 'lucide-react';
+import { KeyRound, LogOut, Menu, Moon, Search, Sun, User } from 'lucide-react';
+import { CambiarPasswordDialog } from '../auth/CambiarPasswordDialog';
 import { useAuth, usePerfil } from '../auth/useAuth';
 import { useTheme } from '../design-system/ThemeProvider';
 import { iniciales } from '../shared/lib/format';
@@ -21,9 +23,11 @@ export function Topbar() {
   const { theme, toggle } = useTheme();
   const { abrirMovil } = useSidebarStore();
   const navigate = useNavigate();
+  const [cambiarAbierto, setCambiarAbierto] = useState(false);
   const nombreMostrar = perfil?.nombreCompleto ?? nombre ?? 'Usuario';
 
   return (
+    <>
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-surface px-4 lg:px-6">
       <button
         type="button"
@@ -73,6 +77,9 @@ export function Topbar() {
               <span className="block">{roles.join(' · ') || perfil?.rol}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setCambiarAbierto(true)}>
+              <KeyRound aria-hidden /> Cambiar contraseña
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => void signOut()}>
               <LogOut aria-hidden /> Cerrar sesión
             </DropdownMenuItem>
@@ -80,5 +87,7 @@ export function Topbar() {
         </DropdownMenu>
       </div>
     </header>
+    <CambiarPasswordDialog open={cambiarAbierto} onOpenChange={setCambiarAbierto} />
+    </>
   );
 }

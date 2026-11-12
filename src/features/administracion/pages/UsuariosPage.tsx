@@ -325,7 +325,7 @@ function CrearUsuarioDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             <DialogBody>
               <div role="alert" className="mb-3 rounded-lg bg-status-warning/15 p-3 text-small text-ink">
                 Esta contraseña temporal se muestra <strong>una sola vez</strong>. Cópiala y envíasela por un canal privado. No la
-                guardamos.
+                guardamos. La persona debe cambiarla al entrar, desde su menú de cuenta → <strong>Cambiar contraseña</strong>.
               </div>
               <p className="mb-1 flex items-center gap-1.5 text-small font-bold text-navy-700">
                 <KeyRound className="size-4" aria-hidden /> Contraseña temporal

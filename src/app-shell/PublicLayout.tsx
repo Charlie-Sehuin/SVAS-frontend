@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Headset, LogOut, Menu, Phone, User } from 'lucide-react';
+import { Headset, KeyRound, LogOut, Menu, Phone, User } from 'lucide-react';
+import { CambiarPasswordDialog } from '../auth/CambiarPasswordDialog';
 import { useAuth } from '../auth/useAuth';
 import { useApplyTheme } from '../design-system/ThemeProvider';
 import { cn } from '../shared/lib/utils';
@@ -143,6 +145,7 @@ function HeaderEmbudo({ paso }: { paso: PasoEmbudo }) {
 /** Menú de cuenta del CLIENTE (§7.2): "Mis cotizaciones", "Mis pólizas", "Cerrar sesión". Anónimo: "Iniciar sesión". */
 function MenuCuenta({ variante }: { variante: 'claro' | 'oscuro' }) {
   const { estado, nombre, roles, signOut } = useAuth();
+  const [cambiarAbierto, setCambiarAbierto] = useState(false);
   const oscuro = variante === 'oscuro';
   if (estado !== 'autenticado') {
     return (
@@ -155,6 +158,7 @@ function MenuCuenta({ variante }: { variante: 'claro' | 'oscuro' }) {
   }
   const esInterno = roles.includes('ASESOR') || roles.includes('ADMINISTRADOR');
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
@@ -186,11 +190,16 @@ function MenuCuenta({ variante }: { variante: 'claro' | 'oscuro' }) {
           </>
         )}
         <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => setCambiarAbierto(true)}>
+          <KeyRound aria-hidden /> Cambiar contraseña
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void signOut()}>
           <LogOut aria-hidden /> Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <CambiarPasswordDialog open={cambiarAbierto} onOpenChange={setCambiarAbierto} />
+    </>
   );
 }
 

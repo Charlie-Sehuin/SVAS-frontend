@@ -20,6 +20,12 @@ export interface AuthContextValue {
   nombre: string | null;
   signIn: (email: string, password: string) => Promise<{ roles: Rol[] }>;
   signOut: () => Promise<void>;
+  /**
+   * Cambia la contraseña de quien tiene la sesión abierta. Pide la actual y la comprueba con Supabase
+   * antes de cambiarla (así una sesión olvidada abierta no basta para quitarle la cuenta a alguien).
+   * Lanza `Error` con un mensaje en lenguaje llano.
+   */
+  cambiarPassword: (actual: string, nueva: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -81,6 +87,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.clear();
   }, [queryClient]);
 
+  const cambiarPassword = useCallback(async (actual: string, nueva: string) => {
+    const supabase = await getSupabase();
+    const { data: sesion } = await supabase.auth.getSession();
+    const email = sesion.session?.user.email;
+    if (!email) throw new Error('Tu sesión venció. Vuelve a iniciar sesión.');
+
+    // 1) Comprobar la contraseña actual. 2) Cambiarla. Los dos errores se explican por separado.
+    const { error: errorActual } = await supabase.auth.signInWithPassword({ email, password: actual });
+    if (errorActual) throw new Error(traducirErrorPassword(errorActual, 'actual'));
+    const { error } = await supabase.auth.updateUser({ password: nueva });
+    if (error) throw new Error(traducirErrorPassword(error, 'nueva'));
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => {
     const meta = session?.user.user_metadata as { full_name?: unknown } | undefined;
     return {
@@ -91,10 +110,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       nombre: typeof meta?.full_name === 'string' ? meta.full_name : null,
       signIn,
       signOut,
+      cambiarPassword,
     };
-  }, [estado, session, signIn, signOut]);
+  }, [estado, session, signIn, signOut, cambiarPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/** Errores de Supabase al cambiar la contraseña, en lenguaje llano. Se mira el código y, si no hay, el texto. */
+export function traducirErrorPassword(error: { message: string; code?: string }, paso: 'actual' | 'nueva'): string {
+  const m = error.message.toLowerCase();
+  if (paso === 'actual') {
+    if (m.includes('rate limit') || m.includes('too many')) return 'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
+    return 'La contraseña actual no es correcta.';
+  }
+  if (error.code === 'same_password' || m.includes('different from the old')) return 'La nueva contraseña debe ser distinta de la actual.';
+  if (error.code === 'weak_password' || m.includes('weak') || m.includes('should contain') || m.includes('known to be')) {
+    return 'Esa contraseña es demasiado común o débil. Prueba con una frase más larga, como tres palabras y un número.';
+  }
+  if (m.includes('at least') || m.includes('too short')) return 'La contraseña es demasiado corta.';
+  if (m.includes('reauth')) return 'Por seguridad, cierra sesión, vuelve a entrar y repite el cambio.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
+  return 'No pudimos cambiar la contraseña. Inténtalo de nuevo.';
 }
 
 /** Mensajes de Supabase en lenguaje llano (voz y tono §14). */
