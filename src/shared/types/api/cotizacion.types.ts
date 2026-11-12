@@ -83,35 +83,37 @@ export interface PrimaCotizada {
   detalleCalculo?: DetalleCalculoTarifa | null;
 }
 
+/** Resumen del vehículo que devuelve el backend (no incluye el contacto del cliente). */
+export interface VehiculoCotizado {
+  uso: UsoVehiculo;
+  marca: string;
+  modelo: string;
+  tipo: string;
+  anio: number;
+  ubigeo: string;
+  distrito?: string;
+}
+
 export interface Cotizacion {
   id: Uuid;
   estado: EstadoCotizacion;
+  fecha: FechaIso;
   opciones: OpcionCotizacion[];
   motivoDerivacion: MotivoDerivacion | null;
+  vehiculo: VehiculoCotizado;
   primas: PrimaCotizada[];
-  creadoEn?: FechaIso;
-  vehiculo?: VehiculoCotizado;
-  ubicacion?: { ubigeo: string; distrito?: string; provincia?: string; departamento?: string };
-  contacto?: ContactoCotizacion;
-}
-
-export interface VehiculoCotizado {
-  marca: string;
-  modelo: string;
-  anio: number;
-  uso: UsoVehiculo;
-  tipo?: string;
-  placa?: string | null;
 }
 
 export interface ContactoCotizacion {
   nombres: string;
   apellidos: string;
+  /** Celular peruano de 9 dígitos que empieza con 9. */
   telefono: string;
   email: string;
   canalPreferido: CanalContacto;
 }
 
+/** Cuerpo de `POST /cotizaciones`. No lleva suma asegurada ni documento (se pide al comprar). */
 export interface CrearCotizacionRequest {
   vehiculo: {
     uso: UsoVehiculo;
@@ -123,14 +125,18 @@ export interface CrearCotizacionRequest {
   };
   ubicacion: { ubigeo: string };
   contacto: ContactoCotizacion;
-  /** Campos extra del catálogo (RF-02) que no caben arriba. */
-  [extra: string]: unknown;
 }
 
 export interface CrearCotizacionResponse {
   cotizacion: Cotizacion;
   /** Solo llega aquí; se guarda en sessionStorage, nunca en localStorage. */
   tokenAcceso: string;
+  warning?: Warning;
+}
+
+/** `GET /cotizaciones/:id/resumen`. */
+export interface ResumenCotizacionResponse {
+  cotizacion: Cotizacion;
   warning?: Warning;
 }
 
@@ -142,4 +148,14 @@ export interface ActualizarSumaResponse {
   /** Solo las primas de esa aseguradora. */
   primas: PrimaCotizada[];
   warning?: Warning;
+}
+
+/** `GET /cotizaciones/mias` (CLIENTE). */
+export interface MiCotizacion {
+  id: Uuid;
+  fecha: FechaIso;
+  estado: EstadoCotizacion;
+  vehiculo: { marca: string; modelo: string; anio: number };
+  /** La cuota mensual más baja entre sus planes disponibles. */
+  primaMensualDesde: Monto | null;
 }

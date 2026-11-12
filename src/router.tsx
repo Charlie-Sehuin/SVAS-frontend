@@ -15,6 +15,13 @@ import { Skeleton } from './shared/ui/skeleton';
  */
 const LandingPage = lazy(() => import('./features/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('./auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+
+/* Ola 1 · cotizar y comparar. El embudo carga solo lo suyo: cada pantalla en su propio chunk. */
+const CotizarPage = lazy(() => import('./features/cotizacion/pages/CotizarPage').then((m) => ({ default: m.CotizarPage })));
+const ComparativoPage = lazy(() => import('./features/cotizacion/pages/ComparativoPage').then((m) => ({ default: m.ComparativoPage })));
+const MisCotizacionesPage = lazy(() =>
+  import('./features/cotizacion/pages/MisCotizacionesPage').then((m) => ({ default: m.MisCotizacionesPage })),
+);
 const BackofficeLayout = lazy(() => import('./app-shell/BackofficeLayout').then((m) => ({ default: m.BackofficeLayout })));
 
 /* Ola 0 · administración. Cada pantalla en su propio chunk: el embudo del cliente no las descarga. */
@@ -58,8 +65,8 @@ export const router = createBrowserRouter([
     errorElement: <NotFoundPage />,
     children: [
       { path: '/', element: lazyPage(<LandingPage />) },
-      { path: '/cotizar', element: pendiente('Cotizar', 1) },
-      { path: '/cotizacion/:id', element: pendiente('Comparativo de planes', 1) },
+      { path: '/cotizar', element: lazyPage(<CotizarPage />) },
+      { path: '/cotizacion/:id', element: lazyPage(<ComparativoPage />) },
       { path: '/cotizacion/:id/prueba', element: pendiente('Prueba de Choque', 2) },
       { path: '/comparar', element: pendiente('Comparar planes', 2) },
       { path: '/retoma/:token', element: pendiente('Retomar mi cotización', 2) },
@@ -71,7 +78,7 @@ export const router = createBrowserRouter([
           { path: '/compra/:cotizacionId', element: pendiente('Compra', 3) },
           { path: '/compra/:id/listo', element: pendiente('Confirmación', 3) },
           { path: '/mi-cuenta', element: <Navigate to="/mi-cuenta/cotizaciones" replace /> },
-          { path: '/mi-cuenta/cotizaciones', element: pendiente('Mis cotizaciones', 1) },
+          { path: '/mi-cuenta/cotizaciones', element: lazyPage(<MisCotizacionesPage />) },
           { path: '/mi-cuenta/polizas', element: pendiente('Mis pólizas', 3) },
         ],
       },

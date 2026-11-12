@@ -76,16 +76,15 @@ export const api: KyInstance = ky.create({
   hooks: {
     beforeRequest: [
       async ({ request }) => {
-        // Autorización: Bearer si hay sesión; si no, X-Cotizacion-Token cuando la
-        // ruta es de una cotización concreta (doc conexión §2).
+        // Autorización (doc conexión §2): Bearer si hay sesión y, además, el X-Cotizacion-Token si la ruta es de
+        // una cotización cuyo token tenemos. Se mandan los DOS a propósito: con sesión, el backend primero mira si
+        // la cotización es visible para ese usuario y, si no lo es (p. ej. alguien con sesión que cotizó sin cuenta),
+        // usa el token. Si solo mandáramos el Bearer, esa persona perdería acceso a su propia cotización.
         const token = await getAccessToken();
-        if (token) {
-          request.headers.set('Authorization', `Bearer ${token}`);
-        } else {
-          const cotizacionId = cotizacionIdDesdeUrl(request.url);
-          const tokenCotizacion = cotizacionId ? useCotizacionTokenStore.getState().obtener(cotizacionId) : null;
-          if (tokenCotizacion) request.headers.set('X-Cotizacion-Token', tokenCotizacion);
-        }
+        if (token) request.headers.set('Authorization', `Bearer ${token}`);
+        const cotizacionId = cotizacionIdDesdeUrl(request.url);
+        const tokenCotizacion = cotizacionId ? useCotizacionTokenStore.getState().obtener(cotizacionId) : null;
+        if (tokenCotizacion) request.headers.set('X-Cotizacion-Token', tokenCotizacion);
         // Aviso de "despertando el servidor" (plan gratuito, doc conexión §1).
         (request as RequestConTimer)[WAKE_UP_SIGNAL] = setTimeout(
           () => useWakeUpStore.getState().marcarDespertando(),

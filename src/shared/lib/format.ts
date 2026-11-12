@@ -33,8 +33,8 @@ export function formatearMonto(valor: string | number, moneda: Moneda = 'USD', d
 }
 
 /** Partes para <MoneyValue>: símbolo pequeño, cifra grande (diseño visual §8.1). */
-export function partesMonto(valor: string | number, moneda: Moneda = 'USD') {
-  return { simbolo: SIMBOLO[moneda], cifra: formatearNumero(valor, 2) };
+export function partesMonto(valor: string | number, moneda: Moneda = 'USD', decimales = 2) {
+  return { simbolo: SIMBOLO[moneda], cifra: formatearNumero(valor, decimales) };
 }
 
 /**

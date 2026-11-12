@@ -11,6 +11,8 @@ interface MoneyValueProps {
   sufijo?: string;
   /** Sufijo para lector de pantalla, p. ej. "al mes" (si difiere del visible). */
   sufijoAria?: string;
+  /** Decimales visibles (por defecto 2). La lectura para pantalla siempre incluye los centavos. */
+  decimales?: 0 | 2;
   className?: string;
 }
 
@@ -19,8 +21,8 @@ interface MoneyValueProps {
  * tabular, símbolo en peso 400 al 70 %, cifra en 700. El lector de pantalla
  * lee "53 dólares con 37 centavos al mes", no "USD 53.37".
  */
-export function MoneyValue({ value, moneda = 'USD', size = 'inline', sufijo, sufijoAria, className }: MoneyValueProps) {
-  const { simbolo, cifra } = partesMonto(value, moneda);
+export function MoneyValue({ value, moneda = 'USD', size = 'inline', sufijo, sufijoAria, decimales = 2, className }: MoneyValueProps) {
+  const { simbolo, cifra } = partesMonto(value, moneda, decimales);
   const aria = `${montoEnPalabras(value, moneda)}${sufijoAria ?? sufijo ? ` ${sufijoAria ?? sufijo}` : ''}`;
   const clases =
     size === 'xl'

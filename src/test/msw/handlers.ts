@@ -5,6 +5,8 @@ import type { CatalogoCampos, HealthLive, HealthReady, Usuario } from '../../sha
 export const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
 
 /** Formas reales del backend (doc conexión §6). Se amplían ola por ola. */
+const TODAS = ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'];
+
 export const catalogoCamposMock: CatalogoCampos = {
   aseguradoras: [
     { id: '11111111-1111-4111-8111-111111111111', nombre: 'Rímac' },
@@ -13,18 +15,14 @@ export const catalogoCamposMock: CatalogoCampos = {
     { id: '44444444-4444-4444-8444-444444444444', nombre: 'Mapfre' },
     { id: '55555555-5555-4555-8555-555555555555', nombre: 'Qualitas' },
   ],
+  // Lo que devuelve `GET /catalogo/campos` hoy (seed 0016): el tipo de vehículo no se pregunta y el contacto no es un campo.
   campos: [
-    { nombre: 'marca', tipo: 'LISTA', obligatorio: true, origenValores: 'CATALOGO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
-    { nombre: 'modelo', tipo: 'LISTA', obligatorio: true, origenValores: 'CATALOGO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
-    { nombre: 'anio', tipo: 'NUMERO', obligatorio: true, origenValores: 'CATALOGO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
+    { nombre: 'marca', tipo: 'LISTA', obligatorio: true, origenValores: 'CATALOGO', valoresPermitidos: [], aseguradoras: TODAS },
+    { nombre: 'modelo', tipo: 'LISTA', obligatorio: true, origenValores: 'CATALOGO', valoresPermitidos: [], aseguradoras: TODAS },
+    { nombre: 'anio', tipo: 'LISTA', obligatorio: true, origenValores: 'CATALOGO', valoresPermitidos: [], aseguradoras: TODAS },
     { nombre: 'ubigeo', tipo: 'LISTA', obligatorio: true, origenValores: 'CATALOGO', valoresPermitidos: [], aseguradoras: ['Pacífico', 'La Positiva'] },
-    { nombre: 'uso', tipo: 'LISTA', obligatorio: true, origenValores: 'ESTATICO', valoresPermitidos: ['PARTICULAR', 'COMERCIAL_LIGERO', 'TRANSPORTE_PASAJEROS', 'CARGA'], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
-    { nombre: 'placa', tipo: 'TEXTO', obligatorio: false, origenValores: 'ESTATICO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Mapfre'] },
-    { nombre: 'nombres', tipo: 'TEXTO', obligatorio: true, origenValores: 'ESTATICO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
-    { nombre: 'apellidos', tipo: 'TEXTO', obligatorio: true, origenValores: 'ESTATICO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
-    { nombre: 'telefono', tipo: 'TEXTO', obligatorio: true, origenValores: 'ESTATICO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
-    { nombre: 'email', tipo: 'TEXTO', obligatorio: true, origenValores: 'ESTATICO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
-    { nombre: 'canalPreferido', tipo: 'LISTA', obligatorio: true, origenValores: 'ESTATICO', valoresPermitidos: ['LLAMADA', 'WHATSAPP'], aseguradoras: ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Qualitas'] },
+    { nombre: 'clase', tipo: 'LISTA', obligatorio: false, origenValores: 'ESTATICO', valoresPermitidos: ['Automóvil', 'Camioneta', 'Station wagon'], aseguradoras: ['La Positiva', 'Qualitas'] },
+    { nombre: 'placa', tipo: 'TEXTO', obligatorio: false, origenValores: 'ESTATICO', valoresPermitidos: [], aseguradoras: ['Rímac', 'Pacífico', 'Mapfre'] },
   ],
 };
 

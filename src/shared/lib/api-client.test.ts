@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../test/msw/server';
 import { API } from '../../test/msw/handlers';
@@ -61,6 +61,23 @@ describe('api-client', () => {
     );
     await api.get(`cotizaciones/${id}/resumen`).json();
     expect(header).toBe('tok-abc');
+  });
+
+  it('con sesión manda el Bearer Y el token de la cotización (el backend usa el token si el usuario no es el dueño)', async () => {
+    const id = '8a1b2c3d-4e5f-4a60-8b7c-0d1e2f3a4b5c';
+    useCotizacionTokenStore.getState().guardar(id, 'tok-xyz');
+    const supabase = await import('./supabase');
+    const espia = vi.spyOn(supabase, 'getAccessToken').mockResolvedValue('jwt-de-prueba');
+    let cabeceras: { auth: string | null; token: string | null } = { auth: null, token: null };
+    server.use(
+      http.get(`${API}/cotizaciones/${id}/resumen`, ({ request }) => {
+        cabeceras = { auth: request.headers.get('Authorization'), token: request.headers.get('X-Cotizacion-Token') };
+        return HttpResponse.json({ id });
+      }),
+    );
+    await api.get(`cotizaciones/${id}/resumen`).json();
+    espia.mockRestore();
+    expect(cabeceras).toEqual({ auth: 'Bearer jwt-de-prueba', token: 'tok-xyz' });
   });
 
   it('en 500 sin cuerpo da un mensaje llano', async () => {

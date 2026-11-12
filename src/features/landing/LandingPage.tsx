@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Ambulance,
   ArrowRight,
@@ -19,6 +20,8 @@ import type { LucideIcon } from 'lucide-react';
 import { Button } from '../../shared/ui/button';
 import { Card } from '../../shared/ui/card';
 import { cn } from '../../shared/lib/utils';
+import { SelectorVehiculoCascada, type ValorVehiculo } from '../cotizacion/components/SelectorVehiculoCascada';
+import { useCotizarWizardStore } from '../cotizacion/store/useCotizarWizardStore';
 
 /**
  * Landing (diseño visual §9.1). Conserva la identidad de la web actual
@@ -67,15 +70,25 @@ function Hero() {
 }
 
 /**
- * Tarjeta del hero: muestra solo el paso 1 y continúa en /cotizar (§9.1).
- * El formulario dinámico real (`PasoVehiculo`, Ola 1) reemplazará este cuerpo.
+ * Tarjeta del hero (diseño §9.1): muestra solo el paso 1 (marca, modelo y año reales del catálogo) y continúa en
+ * /cotizar con lo elegido ya cargado en el borrador. No valida: el asistente lo hace paso a paso.
  */
 function HeroCotizador() {
+  const navigate = useNavigate();
+  const { borrador, guardarBorrador, setPaso } = useCotizarWizardStore();
+  const [vehiculo, setVehiculo] = useState<ValorVehiculo>(borrador.vehiculo);
+
+  const continuar = () => {
+    guardarBorrador({ vehiculo });
+    setPaso(1);
+    navigate('/cotizar');
+  };
+
   return (
     <Card elevated className="p-6 lg:p-8">
       <h2 className="text-h2 text-brand-500">Cotiza al instante</h2>
-      <ol className="mt-3 flex items-center gap-2 text-small text-ink-soft" aria-label="Pasos de la cotización">
-        <li className="inline-flex items-center gap-1.5 font-bold text-navy-700">
+      <ol className="mb-5 mt-3 flex items-center gap-2 text-small text-ink-soft" aria-label="Pasos de la cotización">
+        <li className="inline-flex items-center gap-1.5 font-bold text-navy-700" aria-current="step">
           <span aria-hidden className="size-2.5 rounded-full bg-brand-500" /> Vehículo
         </li>
         <li className="inline-flex items-center gap-1.5">
@@ -85,18 +98,9 @@ function HeroCotizador() {
           <span aria-hidden className="size-2.5 rounded-full border border-line" /> Contacto
         </li>
       </ol>
-      <dl className="mt-6 space-y-3">
-        {['Marca', 'Modelo', 'Año'].map((campo) => (
-          <div key={campo}>
-            <dt className="mb-1.5 text-small font-bold text-navy-700">{campo}</dt>
-            <dd className="flex h-12 items-center rounded-lg border border-line bg-surface-muted px-3 text-ink-soft">Selecciona</dd>
-          </div>
-        ))}
-      </dl>
-      <Button size="lg" className="mt-6 w-full" asChild>
-        <Link to="/cotizar">
-          Cotiza en 1 minuto <ArrowRight aria-hidden />
-        </Link>
+      <SelectorVehiculoCascada value={vehiculo} onChange={setVehiculo} />
+      <Button size="lg" className="mt-2 w-full" onClick={continuar}>
+        Continuar <ArrowRight aria-hidden />
       </Button>
       <p className="mt-3 text-center text-small text-ink-soft">Sin registro. Te mostramos los precios al terminar.</p>
     </Card>

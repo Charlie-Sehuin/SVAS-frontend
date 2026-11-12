@@ -11,9 +11,11 @@ import { ApiError, isApiError } from '../../lib/api-client';
  * nombre se mantiene por el doc de arquitectura §4.2.
  */
 
-export function WarningToast(warning: Warning | string) {
+export function WarningToast(warning: Warning | string, id?: string) {
   const message = typeof warning === 'string' ? warning : warning.message;
+  // Con `id`, el mismo aviso no se duplica si se dispara dos veces (p. ej. al cotizar y al abrir el comparativo).
   return toast.warning(message, {
+    id,
     icon: <AlertTriangle className="size-5 text-status-warning" aria-hidden />,
     className: '!border-l-4 !border-l-status-warning',
   });

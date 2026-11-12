@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Headset, KeyRound, LogOut, Menu, Phone, User } from 'lucide-react';
-import { CambiarPasswordDialog } from '../auth/CambiarPasswordDialog';
 import { useAuth } from '../auth/useAuth';
+import { TELEFONO, TELEFONO_HREF } from '../shared/lib/contacto';
 import { useApplyTheme } from '../design-system/ThemeProvider';
 import { cn } from '../shared/lib/utils';
 import { iniciales } from '../shared/lib/format';
@@ -18,8 +18,16 @@ import { DemoLegend } from '../shared/ui/domain/DemoLegend';
 import { WakeUpBanner } from '../shared/ui/domain/WakeUpBanner';
 import { LogoS, LogoSeguroSimple } from './LogoSeguroSimple';
 
-export const TELEFONO = '(01) 680-3770';
-export const TELEFONO_HREF = 'tel:+5116803770';
+
+
+
+/**
+ * El diálogo de cambiar contraseña trae zod y react-hook-form (~45 KB comprimidos). Este layout está en el arranque
+ * de toda la app, así que se carga solo cuando alguien lo abre: la landing no debe pagar por un formulario que no usa.
+ */
+const CambiarPasswordDialog = lazy(() =>
+  import('../auth/CambiarPasswordDialog').then((m) => ({ default: m.CambiarPasswordDialog })),
+);
 
 /**
  * Layout del embudo (arquitectura §6.3, diseño §7.6): en la landing, header
@@ -198,7 +206,11 @@ function MenuCuenta({ variante }: { variante: 'claro' | 'oscuro' }) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-    <CambiarPasswordDialog open={cambiarAbierto} onOpenChange={setCambiarAbierto} />
+    {cambiarAbierto ? (
+      <Suspense fallback={null}>
+        <CambiarPasswordDialog open={cambiarAbierto} onOpenChange={setCambiarAbierto} />
+      </Suspense>
+    ) : null}
     </>
   );
 }
