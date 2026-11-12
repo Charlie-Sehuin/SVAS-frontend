@@ -162,7 +162,7 @@ function MenuCuenta({ variante }: { variante: 'claro' | 'oscuro' }) {
           aria-label="Menú de cuenta"
           className={cn(
             'flex size-11 items-center justify-center rounded-full text-small font-bold',
-            oscuro ? 'bg-white text-navy-700 focus-visible:outline-white' : 'bg-navy-700 text-white',
+            oscuro ? 'bg-white text-navy-700 focus-visible:outline-white' : 'bg-navy-700 text-surface',
           )}
         >
           {iniciales(nombre ?? '') || <User className="size-5" />}

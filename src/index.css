@@ -17,6 +17,7 @@
   --accent: var(--color-accent-600);
   --accent-foreground: #ffffff;
   --destructive: var(--color-status-danger);
+  --destructive-foreground: #ffffff;
   --border: var(--color-line);
   --input: var(--color-line);
   --ring: var(--color-brand-300);
@@ -24,8 +25,10 @@
 }
 
 [data-theme='dark'] {
-  /* En modo oscuro el texto sobre brand-500 es navy-900, no blanco (§15.1). */
+  /* En modo oscuro los colores de relleno se aclaran, así que el texto encima pasa a navy-900 y no a blanco (§15.1). */
   --primary-foreground: #0f1e33;
+  --accent-foreground: #0f1e33;
+  --destructive-foreground: #0f1e33;
 }
 
 @layer base {

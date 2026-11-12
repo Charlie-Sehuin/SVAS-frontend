@@ -61,7 +61,7 @@ export function Topbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button type="button" className="flex h-11 items-center gap-2 rounded-lg px-2 hover:bg-navy-50" aria-label="Menú de cuenta">
-              <span className="flex size-8 items-center justify-center rounded-full bg-navy-700 text-small font-bold text-white">
+              <span className="flex size-8 items-center justify-center rounded-full bg-navy-700 text-small font-bold text-surface">
                 {iniciales(nombreMostrar) || <User className="size-4" />}
               </span>
               <span className="hidden text-small font-bold text-navy-700 lg:inline">{nombreMostrar}</span>

@@ -26,7 +26,7 @@ export function LogoS({ className }: { className?: string }) {
     <span
       aria-hidden
       className={cn(
-        'inline-flex size-10 items-center justify-center rounded-lg bg-brand-500 font-sans text-2xl font-900 text-white',
+        'inline-flex size-10 items-center justify-center rounded-lg bg-brand-500 font-sans text-2xl font-900 text-[var(--primary-foreground)]',
         className,
       )}
     >

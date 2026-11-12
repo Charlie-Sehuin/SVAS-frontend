@@ -92,6 +92,22 @@
   --color-brand-600: #ff7aa3;
   --color-accent-600: #2cc3c2;
 
+  /*
+    Los tokens que en modo claro son "oscuros" (azul marino como texto, texto de badges) y los que son
+    "claros" (fondos suaves) se invierten: texto claro sobre fondo oscuro. Sin esto, los títulos en navy-700
+    quedaban casi invisibles sobre la superficie oscura. navy-800 y navy-900 (barra y sidebar) no cambian.
+    El contraste de estos pares lo vigila src/design-system/contraste.test.ts.
+  */
+  --color-navy-50: #1b2f4a;
+  --color-navy-100: #2b4262;
+  --color-navy-500: #7fb0e8;
+  --color-navy-700: #c9daf0;
+  --color-brand-50: #3a1424;
+  --color-brand-100: #5c1d33;
+  --color-brand-700: #ff9dbb;
+  --color-accent-50: #0e3535;
+  --color-accent-700: #7fe0df;
+
   --color-status-pending: #e3ae4f;
   --color-status-progress: #6b9bf5;
   --color-status-success: #4ade80;

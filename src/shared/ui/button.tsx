@@ -17,11 +17,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: 'bg-brand-500 text-[var(--primary-foreground)] hover:bg-brand-600 active:bg-brand-600 shadow-none',
-        accent: 'bg-accent-600 text-white hover:bg-accent-700',
+        accent: 'bg-accent-600 text-[var(--accent-foreground)] hover:bg-accent-700',
         secondary: 'bg-surface border-[1.5px] border-brand-500 text-brand-600 hover:bg-brand-50',
         outlineNavy: 'bg-transparent border border-navy-700 text-navy-700 hover:bg-navy-50',
         ghost: 'bg-transparent text-navy-500 hover:bg-navy-50 hover:text-navy-700',
-        destructive: 'bg-status-danger text-white hover:opacity-90',
+        destructive: 'bg-status-danger text-[var(--destructive-foreground)] hover:opacity-90',
         link: 'bg-transparent text-brand-600 underline-offset-4 hover:underline h-auto px-0 font-bold',
       },
       size: {
