@@ -7,7 +7,6 @@ import { AlertTriangle, ExternalLink, Pencil, Plus } from 'lucide-react';
 import { isApiError } from '../../../shared/lib/api-client';
 import { aplicarErroresBackend } from '../../../shared/lib/forms';
 import type { AseguradoraAdmin, PlanAdmin } from '../../../shared/types/api';
-import { Badge } from '../../../shared/ui/badge';
 import { Button } from '../../../shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../shared/ui/dialog';
@@ -27,14 +26,6 @@ import {
   useEditarPlan,
   usePlanes,
 } from '../hooks/useAdmin';
-
-const NOMBRE_ESTRATEGIA: Record<AseguradoraAdmin['codigoEstrategia'], string> = {
-  RIMAC: 'Fórmula Rímac',
-  PACIFICO: 'Fórmula Pacífico',
-  LA_POSITIVA: 'Fórmula La Positiva',
-  MAPFRE: 'Fórmula Mapfre',
-  QUALITAS: 'Fórmula Qualitas',
-};
 
 /** Aseguradoras y planes (RF-26, RF-27). Activar o desactivar saca o mete a una aseguradora o plan de las cotizaciones. */
 export function AseguradorasPlanesPage() {
@@ -84,9 +75,6 @@ export function AseguradorasPlanesPage() {
               <Card key={a.id}>
                 <CardHeader className="flex-row flex-wrap items-center gap-3">
                   <CardTitle className="text-navy-700">{a.nombre}</CardTitle>
-                  <Badge tone="navy" dot={false}>
-                    {NOMBRE_ESTRATEGIA[a.codigoEstrategia] ?? a.codigoEstrategia}
-                  </Badge>
                   <div className="ml-auto flex items-center gap-2">
                     <span className={cn('text-small font-bold', a.activa ? 'text-status-success' : 'text-status-neutral')}>
                       {a.activa ? 'Activa' : 'Inactiva'}
