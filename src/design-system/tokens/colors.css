@@ -1,0 +1,107 @@
+/*
+  Tokens de color (diseño visual §3 y §15.1).
+  Tailwind 4 lee el bloque @theme y genera las utilidades:
+    bg-brand-500 · text-navy-700 · bg-accent-600 · bg-canvas · bg-surface
+    bg-surface-muted · border-line · text-ink · text-ink-soft
+    text-status-pending … · bg-out-0 … bg-out-3
+  Las utilidades referencian var(--color-*), así que el modo oscuro solo
+  redefine las variables en [data-theme="dark"]. Ningún componente usa hex directo.
+*/
+@theme {
+  /* Marca (carmesí) */
+  --color-brand-50: #fde8ef;
+  --color-brand-100: #fac7d8;
+  --color-brand-300: #f26b96;
+  --color-brand-500: #e6004d;
+  --color-brand-600: #c20040;
+  --color-brand-700: #9f0036;
+  --color-brand-900: #5c0020;
+  --color-brand: var(--color-brand-500);
+
+  /* Azul marino (texto fuerte, estructura) */
+  --color-navy-50: #e8f0fa;
+  --color-navy-100: #c9daf0;
+  --color-navy-300: #8fb0d8;
+  --color-navy-500: #1f5aa0;
+  --color-navy-700: #0b3c75;
+  --color-navy-800: #14365f;
+  --color-navy-900: #0f1e33;
+
+  /* Turquesa: solo Prueba de Choque */
+  --color-accent-50: #e3f5f5;
+  --color-accent-500: #00a6a6;
+  --color-accent-600: #00807f;
+  --color-accent-700: #006466;
+  --color-accent: var(--color-accent-600);
+
+  /* Neutros y superficie */
+  --color-canvas: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef1f5;
+  --color-line: #dde2ea;
+  --color-ink: #1b2430;
+  --color-ink-soft: #5b6676;
+  --color-footer: #3b3b3f;
+  --color-footer-title: #ff4d82; /* títulos del footer: carmesí claro sobre footer (§7.7) */
+
+  /* Estados: un estado = un color en todo el sistema */
+  --color-status-pending: #8a5a00;
+  --color-status-progress: #2563eb;
+  --color-status-success: #15803d;
+  --color-status-danger: #b91c1c;
+  --color-status-neutral: #6b7280;
+  --color-status-warning: #d97706;
+  --color-status-info: #0e7490;
+
+  /* Escala de desembolso (Prueba de Choque). Nunca para estados. */
+  --color-out-0: #e6f4ea;
+  --color-out-1: #fff4d6;
+  --color-out-2: #ffe0c7;
+  --color-out-3: #fbd0cc;
+
+  /* Tipografía (§4.1) */
+  --font-sans: 'Lato', system-ui, sans-serif;
+  --font-money: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Radios y elevación (§5) */
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --shadow-card: 0 2px 8px rgb(15 30 51 / 0.08);
+  --shadow-float: 0 8px 24px rgb(15 30 51 / 0.14);
+
+  /* Breakpoints (§5): base 360 */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* Modo oscuro: solo backoffice (ThemeProvider pone data-theme en <html>). */
+[data-theme='dark'] {
+  --color-canvas: #0f1e33;
+  --color-surface: #14253d;
+  --color-surface-muted: #1b2f4a;
+  --color-line: #2b4262;
+  --color-ink: #e8eef6;
+  --color-ink-soft: #a8b8cc;
+  --color-footer: #0a1626;
+
+  --color-brand-500: #ff4d82; /* sobre #0F1E33: 5.3:1 */
+  --color-brand-600: #ff7aa3;
+  --color-accent-600: #2cc3c2;
+
+  --color-status-pending: #e3ae4f;
+  --color-status-progress: #6b9bf5;
+  --color-status-success: #4ade80;
+  --color-status-danger: #f87171;
+  --color-status-neutral: #9ca3af;
+  --color-status-warning: #fbbf24;
+  --color-status-info: #22d3ee;
+
+  --color-out-0: #14271b;
+  --color-out-1: #2c2412;
+  --color-out-2: #33200f;
+  --color-out-3: #3a1714;
+}

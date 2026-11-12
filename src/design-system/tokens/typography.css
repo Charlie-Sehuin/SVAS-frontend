@@ -1,0 +1,99 @@
+/* Escala tipográfica (diseño visual §4.2). Clases de utilidad propias. */
+@utility text-display {
+  font-size: 2rem; /* 32 */
+  line-height: 2.375rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  @media (width >= 64rem) {
+    font-size: 3rem; /* 48 */
+    line-height: 3.375rem;
+  }
+}
+
+@utility text-h1 {
+  font-size: 1.625rem; /* 26 */
+  line-height: 2rem;
+  font-weight: 700;
+  @media (width >= 64rem) {
+    font-size: 2.125rem; /* 34 */
+    line-height: 2.5rem;
+  }
+}
+
+@utility text-h2 {
+  font-size: 1.25rem; /* 20 */
+  line-height: 1.75rem;
+  font-weight: 700;
+  @media (width >= 64rem) {
+    font-size: 1.625rem;
+    line-height: 2.125rem;
+  }
+}
+
+@utility text-h3 {
+  font-size: 1.0625rem; /* 17 */
+  line-height: 1.5rem;
+  font-weight: 700;
+  @media (width >= 64rem) {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+@utility text-body {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+@utility text-small {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+@utility text-caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Montos: Inter con cifras tabulares (§4.1, §8.1) */
+@utility text-money-xl {
+  font-family: var(--font-money);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  font-size: 2rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  @media (width >= 64rem) {
+    font-size: 2.5rem;
+    line-height: 2.75rem;
+  }
+}
+
+@utility text-money-md {
+  font-family: var(--font-money);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+
+@utility text-step-number {
+  font-size: 3.5rem;
+  line-height: 3.5rem;
+  font-weight: 900;
+  @media (width >= 64rem) {
+    font-size: 4.5rem;
+    line-height: 4.5rem;
+  }
+}
+
+/* Backoffice: densidad compacta (§4.3) */
+@utility text-bo-h1 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+}
