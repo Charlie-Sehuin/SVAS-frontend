@@ -80,12 +80,22 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-small text-ink-soft">
-            ¿Quieres asegurar tu auto?{' '}
-            <Link to="/cotizar" className="font-bold text-brand-600 underline-offset-4 hover:underline">
-              Cotiza en 1 minuto
-            </Link>
-          </p>
+          {from?.startsWith('/compra') ? (
+            // Quien llegó desde "Comprar" y aún no tiene cuenta no debe quedarse sin salida: vuelve a la compra, donde se registra.
+            <p className="mt-6 text-center text-small text-ink-soft">
+              ¿Aún no tienes cuenta?{' '}
+              <Link to={from} className="font-bold text-brand-600 underline-offset-4 hover:underline">
+                Créala para comprar
+              </Link>
+            </p>
+          ) : (
+            <p className="mt-6 text-center text-small text-ink-soft">
+              ¿Quieres asegurar tu auto?{' '}
+              <Link to="/cotizar" className="font-bold text-brand-600 underline-offset-4 hover:underline">
+                Cotiza en 1 minuto
+              </Link>
+            </p>
+          )}
         </Card>
       </main>
       <DemoLegend />

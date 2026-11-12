@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Car, MapPin } from 'lucide-react';
+import { Car, Info, MapPin } from 'lucide-react';
 import { isApiError } from '../../../shared/lib/api-client';
+import { formatearMonto } from '../../../shared/lib/format';
 import { Button } from '../../../shared/ui/button';
 import { Select } from '../../../shared/ui/select';
 import { Skeleton } from '../../../shared/ui/skeleton';
@@ -11,14 +12,15 @@ import { DerivacionBanner } from '../components/DerivacionBanner';
 import { PlanCard, PlanNoDisponible } from '../components/PlanCard';
 import { SumaAseguradaControl } from '../components/SumaAseguradaControl';
 import { useActualizarSuma, useResumenCotizacion } from '../hooks/useCotizacion';
-import { agruparPorAseguradora, aseguradorasDe, type OrdenComparativo } from '../lib/agrupar';
+import { agruparPorAseguradora, aseguradorasDe, limitarARango, mismoMonto, rangoUnion, type OrdenComparativo } from '../lib/agrupar';
+import { guardarSumaElegida, leerSumaElegida } from '../lib/sumaElegida';
 
 const MENSAJE_COMPRA_EN_CURSO = 'Ya iniciaste tu compra: la suma asegurada ya no se puede cambiar.';
 const MENSAJE_COMPRADA = 'Ya compraste este seguro: la suma asegurada ya no se puede cambiar.';
 
 /**
  * `/cotizacion/:id` (RF-05, RF-08, RF-10): un bloque por aseguradora con sus planes, la PRIMA MENSUAL como protagonista
- * y un control de suma asegurada por aseguradora. Todos los montos vienen del backend; aquí solo se ordenan y se pintan.
+ * y UNA sola barra de suma asegurada para toda la cotización. Todos los montos vienen del backend; aquí solo se ordenan y se pintan.
  * Se llega con el token de la cotización (anónimo) o con la sesión del CLIENTE dueño.
  */
 export function ComparativoPage() {
@@ -30,6 +32,8 @@ export function ComparativoPage() {
   /** Aseguradoras con un recálculo en curso (su monto se reemplaza por un esqueleto). */
   const [pendientes, setPendientes] = useState<ReadonlySet<string>>(new Set());
   const [compraEnCurso, setCompraEnCurso] = useState(false);
+  /** La suma que la persona eligió en la barra única (o `null` si aún no eligió: cada aseguradora usa su punto medio). */
+  const [sumaElegida, setSumaElegida] = useState<string | null>(() => (id ? leerSumaElegida(id) : null));
 
   // RF-05 / RN-39: aviso ámbar no bloqueante. Con `id`, el mismo aviso no se repite si ya salió al cotizar.
   const warning = data?.warning;
@@ -41,25 +45,47 @@ export function ComparativoPage() {
   const comprada = cotizacion?.estado === 'CONVERTIDA';
   const grupos = useMemo(() => agruparPorAseguradora(cotizacion?.primas ?? [], orden, filtro), [cotizacion, orden, filtro]);
   const aseguradoras = useMemo(() => aseguradorasDe(cotizacion?.primas ?? []), [cotizacion]);
+  const rangoGlobal = useMemo(() => rangoUnion(cotizacion?.primas ?? []), [cotizacion]);
+  // Una suma guardada que ya no cabe en el rango de la barra (p. ej. cambió la tarifa) se ignora.
+  const sumaDeLaBarra = sumaElegida && rangoGlobal && limitarARango(sumaElegida, rangoGlobal).ajustada === null ? sumaElegida : null;
 
-  const cambiarSuma = async (aseguradoraId: string, sumaAsegurada: string): Promise<boolean> => {
-    setPendientes((p) => new Set(p).add(aseguradoraId));
-    try {
-      const r = await actualizar.mutateAsync({ aseguradoraId, sumaAsegurada });
-      if (r.warning && id) WarningToast(r.warning, `warning-${id}-${r.warning.code}`);
-      return true;
-    } catch (e) {
-      // 409: ya hay compra en curso, el control se bloquea. 400 (rango) y el resto: el mensaje del backend tal cual.
-      if (isApiError(e) && e.statusCode === 409) setCompraEnCurso(true);
-      else ErrorToast(e);
-      return false;
-    } finally {
-      setPendientes((p) => {
-        const n = new Set(p);
-        n.delete(aseguradoraId);
-        return n;
-      });
+  /**
+   * La barra es una sola, pero cada aseguradora tiene su propio rango (RN-37): a cada una se le pide la suma elegida o, si
+   * se sale de su rango, su mínimo o su máximo. El backend recalcula por aseguradora (una petición cada una, en paralelo).
+   * Devuelve `true` si todas se aplicaron.
+   */
+  const aplicarSuma = async (valor: string): Promise<boolean> => {
+    if (!cotizacion || !id) return false;
+    const pedidos = agruparPorAseguradora(cotizacion.primas, 'precio').flatMap((g) => {
+      const primera = g.disponibles[0];
+      if (!primera?.rangoSuma || !primera.sumaAsegurada) return [];
+      const { valor: objetivo } = limitarARango(valor, primera.rangoSuma);
+      return mismoMonto(objetivo, primera.sumaAsegurada) ? [] : [{ aseguradoraId: g.aseguradoraId, sumaAsegurada: objetivo }];
+    });
+
+    setPendientes((p) => new Set([...p, ...pedidos.map((x) => x.aseguradoraId)]));
+    const resultados = await Promise.allSettled(pedidos.map((x) => actualizar.mutateAsync(x)));
+    setPendientes((p) => {
+      const n = new Set(p);
+      pedidos.forEach((x) => n.delete(x.aseguradoraId));
+      return n;
+    });
+
+    const fallos: unknown[] = [];
+    for (const r of resultados) {
+      if (r.status === 'fulfilled') {
+        if (r.value.warning) WarningToast(r.value.warning, `warning-${id}-${r.value.warning.code}`);
+      } else fallos.push(r.reason);
     }
+    if (fallos.length > 0) {
+      // 409: ya hay compra en curso, la barra se bloquea. El resto: el mensaje del backend tal cual (una sola vez).
+      if (fallos.some((e) => isApiError(e) && e.statusCode === 409)) setCompraEnCurso(true);
+      else ErrorToast(fallos[0]);
+      return false;
+    }
+    setSumaElegida(valor);
+    guardarSumaElegida(id, valor);
+    return true;
   };
 
   if (isError) {
@@ -138,6 +164,24 @@ export function ComparativoPage() {
         </div>
       ) : null}
 
+      {rangoGlobal ? (
+        <div className="mb-6 md:sticky md:top-[4.5rem] md:z-10">
+          <SumaAseguradaControl
+            titulo="Tu suma asegurada"
+            rango={rangoGlobal}
+            suma={sumaDeLaBarra}
+            pendiente={pendientes.size > 0}
+            bloqueada={bloqueoSuma}
+            ayuda={
+              sumaDeLaBarra
+                ? 'Usamos esta suma en todas las aseguradoras. Si una no la admite, usamos el mínimo o el máximo que permite.'
+                : 'Cada aseguradora propone su punto medio. Mueve la barra para usar la misma suma en todas.'
+            }
+            onCommit={aplicarSuma}
+          />
+        </div>
+      ) : null}
+
       {grupos.length === 0 ? (
         <EstadoVacio titulo="Todavía no hay planes para esta cotización. Un asesor te ayudará a completarla." />
       ) : (
@@ -146,23 +190,24 @@ export function ComparativoPage() {
           {grupos.map((g) => {
             const primera = g.disponibles[0];
             const actualizando = pendientes.has(g.aseguradoraId);
+            // Si la suma elegida se salía del rango de esta aseguradora, se le avisa a la persona qué suma se usó en su lugar.
+            const limite = sumaDeLaBarra && primera?.rangoSuma ? limitarARango(sumaDeLaBarra, primera.rangoSuma) : null;
+            const ajuste =
+              limite?.ajustada && primera?.sumaAsegurada && mismoMonto(limite.valor, primera.sumaAsegurada) ? limite : null;
             return (
               <section key={g.aseguradoraId} aria-labelledby={`aseg-${g.aseguradoraId}`}>
                 <h2 id={`aseg-${g.aseguradoraId}`} className="mb-3 text-h2 text-navy-700">
                   {g.aseguradora}
                 </h2>
 
-                {primera?.rangoSuma && primera.sumaAsegurada ? (
-                  <div className="mb-4">
-                    <SumaAseguradaControl
-                      aseguradora={g.aseguradora}
-                      rango={primera.rangoSuma}
-                      suma={primera.sumaAsegurada}
-                      pendiente={actualizando}
-                      bloqueada={bloqueoSuma}
-                      onCommit={(suma) => cambiarSuma(g.aseguradoraId, suma)}
-                    />
-                  </div>
+                {ajuste ? (
+                  <p className="mb-3 flex items-start gap-1.5 text-small text-ink-soft">
+                    <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                    <span>
+                      Usamos {formatearMonto(ajuste.valor, 'USD', 0)}, el {ajuste.ajustada === 'maxima' ? 'máximo' : 'mínimo'} que
+                      permite {g.aseguradora}.
+                    </span>
+                  </p>
                 ) : null}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

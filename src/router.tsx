@@ -19,6 +19,7 @@ const LoginPage = lazy(() => import('./auth/LoginPage').then((m) => ({ default: 
 /* Ola 1 · cotizar y comparar. El embudo carga solo lo suyo: cada pantalla en su propio chunk. */
 const CotizarPage = lazy(() => import('./features/cotizacion/pages/CotizarPage').then((m) => ({ default: m.CotizarPage })));
 const ComparativoPage = lazy(() => import('./features/cotizacion/pages/ComparativoPage').then((m) => ({ default: m.ComparativoPage })));
+const CompraPage = lazy(() => import('./features/compra/pages/CompraPage').then((m) => ({ default: m.CompraPage })));
 const MisCotizacionesPage = lazy(() =>
   import('./features/cotizacion/pages/MisCotizacionesPage').then((m) => ({ default: m.MisCotizacionesPage })),
 );
@@ -70,12 +71,14 @@ export const router = createBrowserRouter([
       { path: '/cotizacion/:id/prueba', element: pendiente('Prueba de Choque', 2) },
       { path: '/comparar', element: pendiente('Comparar planes', 2) },
       { path: '/retoma/:token', element: pendiente('Retomar mi cotización', 2) },
+      // La compra es pública a propósito: un cliente NUEVO no tiene cuenta y se la crea aquí mismo, sin salir del
+      // embudo (doc de arquitectura §6.2: "CLIENTE, registro en el paso 1"). La pantalla decide qué mostrar según la sesión.
+      { path: '/compra/:cotizacionId', element: lazyPage(<CompraPage />) },
 
       /* CLIENTE */
       {
         element: <RoleGuard roles={['CLIENTE']} />,
         children: [
-          { path: '/compra/:cotizacionId', element: pendiente('Compra', 3) },
           { path: '/compra/:id/listo', element: pendiente('Confirmación', 3) },
           { path: '/mi-cuenta', element: <Navigate to="/mi-cuenta/cotizaciones" replace /> },
           { path: '/mi-cuenta/cotizaciones', element: lazyPage(<MisCotizacionesPage />) },

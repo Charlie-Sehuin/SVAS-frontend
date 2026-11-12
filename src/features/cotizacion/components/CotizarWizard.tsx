@@ -10,6 +10,7 @@ import { Skeleton } from '../../../shared/ui/skeleton';
 import { EstadoError } from '../../../shared/ui/domain/EstadoVacio';
 import { ErrorToast, WarningToast } from '../../../shared/ui/domain/toasts';
 import { useCamposCatalogo } from '../hooks/useCatalogo';
+import { useContactoPrevioStore } from '../../../shared/stores/useContactoPrevioStore';
 import { useCotizar } from '../hooks/useCotizacion';
 import {
   armarRequest,
@@ -112,6 +113,13 @@ function WizardForm({ catalogo }: { catalogo: CatalogoCampos }) {
       setBloqueo(null);
       try {
         const r = await cotizar.mutateAsync(armarRequest(v));
+        // El asistente borra su borrador, pero el registro de la compra reutiliza estos datos (solo falta la contraseña).
+        useContactoPrevioStore.getState().guardar({
+          nombres: v.contacto.nombres.trim(),
+          apellidos: v.contacto.apellidos.trim(),
+          telefono: v.contacto.telefono.replace(/[\s-]/g, ''),
+          email: v.contacto.email.trim().toLowerCase(),
+        });
         reiniciar();
         // RF-05: si alguna aseguradora no cotizó, aviso ámbar (la operación SÍ se ejecutó).
         if (r.warning) WarningToast(r.warning, `warning-${r.cotizacion.id}-${r.warning.code}`);

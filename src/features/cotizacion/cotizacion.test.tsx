@@ -325,6 +325,7 @@ const servirResumen = (o: Partial<Cotizacion> = {}) =>
   server.use(http.get(`${API}/cotizaciones/cot-1/resumen`, () => HttpResponse.json(resumen(o))));
 
 const URL_SUMA = `${API}/cotizaciones/cot-1/aseguradoras/a-rimac/suma-asegurada`;
+const URL_SUMA_MAPFRE = `${API}/cotizaciones/cot-1/aseguradoras/a-mapfre/suma-asegurada`;
 
 function renderComparativo() {
   return renderConProviders(
@@ -335,7 +336,7 @@ function renderComparativo() {
   );
 }
 
-const campoSuma = () => screen.getByLabelText('Suma asegurada de Rímac, en dólares');
+const campoSuma = () => screen.getByLabelText('Tu suma asegurada, en dólares');
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('Comparativo de planes', () => {
@@ -402,13 +403,23 @@ describe('Comparativo de planes', () => {
   });
 });
 
-describe('Suma asegurada por aseguradora (RN-37)', () => {
-  it('espera a que dejes de escribir, pide UNA vez el recálculo con la suma como texto y pinta las primas que devuelve', async () => {
+describe('Barra única de suma asegurada (RN-37)', () => {
+  it('hay UNA sola barra para toda la cotización y empieza sin elegir', async () => {
     servirResumen();
-    const cuerpos: unknown[] = [];
+    renderComparativo();
+
+    await screen.findByRole('heading', { level: 1, name: /Honda/ });
+    expect(screen.getAllByRole('slider')).toHaveLength(1);
+    expect(campoSuma()).toHaveValue('');
+    expect(screen.getByText(/cada aseguradora propone su punto medio/i)).toBeInTheDocument();
+  });
+
+  it('pide el recálculo a CADA aseguradora que cotizó (no a la que no cotiza) y pinta las primas que devuelve', async () => {
+    servirResumen();
+    const pedidos: Record<string, unknown> = {};
     server.use(
       http.patch(URL_SUMA, async ({ request }) => {
-        cuerpos.push(await request.json());
+        pedidos.rimac = await request.json();
         await delay(150);
         return HttpResponse.json({
           primas: [
@@ -417,89 +428,117 @@ describe('Suma asegurada por aseguradora (RN-37)', () => {
           ],
         });
       }),
+      http.patch(URL_SUMA_MAPFRE, async ({ request }) => {
+        pedidos.mapfre = await request.json();
+        return HttpResponse.json({ primas: [{ ...primas()[2], sumaAsegurada: '15000.00', prima: '540.00', primaMensual: '45.00' }] });
+      }),
     );
     const user = userEvent.setup();
     renderComparativo();
 
     await screen.findByRole('heading', { level: 1, name: /Honda/ });
-    await user.clear(campoSuma());
     await user.type(campoSuma(), '15000');
 
     // Mientras llega la respuesta no se muestra un monto calculado aquí: hay un esqueleto.
     expect((await screen.findAllByRole('status', { name: /recalculando el precio/i })).length).toBeGreaterThan(0);
     expect(await screen.findByLabelText('38 dólares con 12 centavos al mes', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByLabelText('53 dólares con 37 centavos al mes')).toBeInTheDocument();
-    // Las demás aseguradoras no cambian.
-    expect(screen.getByLabelText('52 dólares con 84 centavos al mes')).toBeInTheDocument();
-    expect(cuerpos).toEqual([{ sumaAsegurada: '15000.00' }]);
+    expect(screen.getByLabelText('45 dólares al mes')).toBeInTheDocument();
+    // Una petición por aseguradora con cotización, con la suma como texto; Qualitas no cotizó y no recibe ninguna.
+    expect(pedidos).toEqual({ rimac: { sumaAsegurada: '15000.00' }, mapfre: { sumaAsegurada: '15000.00' } });
+    expect(await screen.findByText(/usamos esta suma en todas las aseguradoras/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('slider')).toHaveLength(1);
   });
 
-  it('un valor fuera del rango muestra el mensaje y NO llama al backend', async () => {
+  it('si la suma se sale del rango de una aseguradora, le pide su máximo y se lo avisa a la persona', async () => {
     servirResumen();
-    let llamadas = 0;
+    const pedidos: Record<string, string> = {};
     server.use(
-      http.patch(URL_SUMA, () => {
-        llamadas += 1;
-        return HttpResponse.json({ primas: [] });
+      http.patch(URL_SUMA, async ({ request }) => {
+        const { sumaAsegurada } = (await request.json()) as { sumaAsegurada: string };
+        pedidos.rimac = sumaAsegurada;
+        return HttpResponse.json({ primas: primas().slice(0, 2).map((p) => ({ ...p, sumaAsegurada })) });
+      }),
+      http.patch(URL_SUMA_MAPFRE, async ({ request }) => {
+        const { sumaAsegurada } = (await request.json()) as { sumaAsegurada: string };
+        pedidos.mapfre = sumaAsegurada;
+        return HttpResponse.json({ primas: [{ ...primas()[2], sumaAsegurada }] });
       }),
     );
     const user = userEvent.setup();
     renderComparativo();
 
     await screen.findByRole('heading', { level: 1, name: /Honda/ });
-    await user.clear(campoSuma());
+    // 16,850 cabe en Mapfre (hasta 16,900) pero se pasa del máximo de Rímac (16,800).
+    await user.type(campoSuma(), '16850');
+
+    expect(await screen.findByText('Usamos USD 16,800, el máximo que permite Rímac.', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(pedidos).toEqual({ rimac: '16800.00', mapfre: '16850.00' });
+    expect(screen.queryByText(/el máximo que permite Mapfre/)).not.toBeInTheDocument();
+  });
+
+  it('un valor fuera del rango de la barra muestra el mensaje y NO llama al backend', async () => {
+    servirResumen();
+    let llamadas = 0;
+    const contar = () => {
+      llamadas += 1;
+      return HttpResponse.json({ primas: [] });
+    };
+    server.use(http.patch(URL_SUMA, contar), http.patch(URL_SUMA_MAPFRE, contar));
+    const user = userEvent.setup();
+    renderComparativo();
+
+    await screen.findByRole('heading', { level: 1, name: /Honda/ });
     await user.type(campoSuma(), '30000');
 
-    expect(await screen.findByText('La suma asegurada de Rímac debe estar entre USD 12,000 y USD 16,800.')).toBeInTheDocument();
+    // La barra va del mínimo más bajo (Rímac, 12,000) al máximo más alto (Mapfre, 16,900).
+    expect(await screen.findByText('La suma asegurada debe estar entre USD 12,000 y USD 16,900.')).toBeInTheDocument();
     await esperar(800);
     expect(llamadas).toBe(0);
   });
 
-  it('si el backend rechaza la suma (400), vuelve a la vigente y no reintenta sin fin', async () => {
+  it('si el backend rechaza la suma (400), la barra vuelve a "sin elegir" y no reintenta sin fin', async () => {
     servirResumen();
-    let llamadas = 0;
-    server.use(
-      http.patch(URL_SUMA, () => {
-        llamadas += 1;
-        return HttpResponse.json(
-          { statusCode: 400, message: 'La suma asegurada de Rímac debe estar entre USD 12,000.00 y USD 16,800.00' },
-          { status: 400 },
-        );
-      }),
-    );
+    const llamadas = { rimac: 0, mapfre: 0 };
+    const rechazar = (clave: 'rimac' | 'mapfre') => () => {
+      llamadas[clave] += 1;
+      return HttpResponse.json({ statusCode: 400, message: 'La suma asegurada no es válida' }, { status: 400 });
+    };
+    server.use(http.patch(URL_SUMA, rechazar('rimac')), http.patch(URL_SUMA_MAPFRE, rechazar('mapfre')));
     const user = userEvent.setup();
     renderComparativo();
 
     await screen.findByRole('heading', { level: 1, name: /Honda/ });
-    await user.clear(campoSuma());
     await user.type(campoSuma(), '15000');
 
-    await waitFor(() => expect(llamadas).toBe(1), { timeout: 3000 });
-    await waitFor(() => expect(campoSuma()).toHaveValue('14400'));
+    await waitFor(() => expect(llamadas).toEqual({ rimac: 1, mapfre: 1 }), { timeout: 3000 });
+    await waitFor(() => expect(campoSuma()).toHaveValue(''));
     await esperar(1200);
-    expect(llamadas).toBe(1);
+    expect(llamadas).toEqual({ rimac: 1, mapfre: 1 });
   });
 
-  it('si ya hay una compra en curso (409), el control se bloquea y lo explica', async () => {
+  it('si ya hay una compra en curso (409), la barra se bloquea y lo explica', async () => {
     servirResumen();
-    server.use(
-      http.patch(URL_SUMA, () =>
-        HttpResponse.json(
-          { statusCode: 409, message: 'Ya iniciaste tu compra: la suma asegurada ya no se puede cambiar.' },
-          { status: 409 },
-        ),
-      ),
-    );
+    const compraEnCurso = () =>
+      HttpResponse.json({ statusCode: 409, message: 'Ya iniciaste tu compra: la suma asegurada ya no se puede cambiar.' }, { status: 409 });
+    server.use(http.patch(URL_SUMA, compraEnCurso), http.patch(URL_SUMA_MAPFRE, compraEnCurso));
     const user = userEvent.setup();
     renderComparativo();
 
     await screen.findByRole('heading', { level: 1, name: /Honda/ });
-    await user.clear(campoSuma());
     await user.type(campoSuma(), '15000');
 
-    // La compra en curso bloquea la suma de TODAS las aseguradoras (es de la cotización, no de una).
-    expect((await screen.findAllByText(/ya iniciaste tu compra/i, {}, { timeout: 3000 })).length).toBeGreaterThanOrEqual(2);
+    expect(await screen.findByText(/ya iniciaste tu compra/i, {}, { timeout: 3000 })).toBeInTheDocument();
     await waitFor(() => expect(campoSuma()).toBeDisabled());
+  });
+
+  it('recuerda la suma elegida si se vuelve a abrir la cotización en la misma pestaña', async () => {
+    sessionStorage.setItem('svas.suma-elegida.cot-1', '15000');
+    servirResumen();
+    renderComparativo();
+
+    await screen.findByRole('heading', { level: 1, name: /Honda/ });
+    expect(campoSuma()).toHaveValue('15000');
   });
 });
 
