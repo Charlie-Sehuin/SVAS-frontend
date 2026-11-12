@@ -1,13 +1,20 @@
 # svas-frontend — SeguroSimple
 
 SPA del Sistema de Venta Autónoma de Seguros. React 18 + TypeScript + Vite + Tailwind 4 +
-TanStack Query 5 + Zustand + React Router 6. Diseño y orden de construcción en
-`../docs/arquitectura-frontend-seguro-simple.md` y `../docs/diseno-visual-seguro-simple.md`.
+TanStack Query 5 + Zustand + React Router 6.
+
+> **Repos.** Este repo es solo el frontend. El backend y la documentación del proyecto están en
+> [SVAS](https://github.com/Charlie-Sehuin/SVAS). Los docs que guían este código viven en su carpeta `docs/`:
+> [arquitectura del frontend](https://github.com/Charlie-Sehuin/SVAS/blob/main/docs/arquitectura-frontend-seguro-simple.md),
+> [diseño visual](https://github.com/Charlie-Sehuin/SVAS/blob/main/docs/diseno-visual-seguro-simple.md),
+> [contrato frontend ↔ backend](https://github.com/Charlie-Sehuin/SVAS/blob/main/docs/contexto-frontend-backend-conexion-seguro-simple.md) y
+> [guía de tarifas y pesos](https://github.com/Charlie-Sehuin/SVAS/blob/main/docs/guia-tarifas-pesos.md).
 
 ## Levantar en local
 
 ```powershell
-cd C:\Users\Charlie\Desktop\Office\svas\svas-frontend
+git clone https://github.com/Charlie-Sehuin/SVAS-frontend.git svas-frontend
+cd svas-frontend
 npm ci
 Copy-Item .env.example .env     # y completa VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
 npm run dev                     # http://localhost:5173
