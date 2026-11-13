@@ -10,7 +10,7 @@ import { MoneyValue } from '../../../shared/ui/domain/MoneyValue';
 import { StatusBadge } from '../../../shared/ui/domain/StatusBadge';
 import { useMisCotizaciones } from '../hooks/useCotizacion';
 
-/** Pestañas de "Mi cuenta" (diseño §9.9). Las pólizas se construyen en la Ola 3. */
+/** Pestañas de "Mi cuenta" (diseño §9.9). Compartidas con `MisPolizasPage`. */
 export function MiCuentaTabs() {
   const tab = ({ isActive }: { isActive: boolean }) =>
     cn(

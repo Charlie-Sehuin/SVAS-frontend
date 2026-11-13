@@ -20,6 +20,10 @@ const LoginPage = lazy(() => import('./auth/LoginPage').then((m) => ({ default: 
 const CotizarPage = lazy(() => import('./features/cotizacion/pages/CotizarPage').then((m) => ({ default: m.CotizarPage })));
 const ComparativoPage = lazy(() => import('./features/cotizacion/pages/ComparativoPage').then((m) => ({ default: m.ComparativoPage })));
 const CompraPage = lazy(() => import('./features/compra/pages/CompraPage').then((m) => ({ default: m.CompraPage })));
+const ConfirmacionPage = lazy(() =>
+  import('./features/compra/pages/ConfirmacionPage').then((m) => ({ default: m.ConfirmacionPage })),
+);
+const MisPolizasPage = lazy(() => import('./features/compra/pages/MisPolizasPage').then((m) => ({ default: m.MisPolizasPage })));
 const MisCotizacionesPage = lazy(() =>
   import('./features/cotizacion/pages/MisCotizacionesPage').then((m) => ({ default: m.MisCotizacionesPage })),
 );
@@ -79,10 +83,10 @@ export const router = createBrowserRouter([
       {
         element: <RoleGuard roles={['CLIENTE']} />,
         children: [
-          { path: '/compra/:id/listo', element: pendiente('Confirmación', 3) },
+          { path: '/compra/:id/listo', element: lazyPage(<ConfirmacionPage />) },
           { path: '/mi-cuenta', element: <Navigate to="/mi-cuenta/cotizaciones" replace /> },
           { path: '/mi-cuenta/cotizaciones', element: lazyPage(<MisCotizacionesPage />) },
-          { path: '/mi-cuenta/polizas', element: pendiente('Mis pólizas', 3) },
+          { path: '/mi-cuenta/polizas', element: lazyPage(<MisPolizasPage />) },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

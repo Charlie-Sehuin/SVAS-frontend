@@ -1,23 +1,26 @@
 import { useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
-import { CheckCircle2, UserPlus } from 'lucide-react';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { UserPlus } from 'lucide-react';
 import { RegistroMinimoDialog } from '../../../auth/RegistroMinimoDialog';
 import { UnauthorizedPage } from '../../../auth/UnauthorizedPage';
 import { useAuth } from '../../../auth/useAuth';
 import { Button } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
 import { Skeleton } from '../../../shared/ui/skeleton';
+import { EstadoVacio } from '../../../shared/ui/domain/EstadoVacio';
+import { AsistenteCompra } from '../components/AsistenteCompra';
 
 /**
  * `/compra/:cotizacionId`. Un cliente NUEVO no tiene cuenta todavía: aquí se la crea sin salir del embudo
  * (`RegistroMinimoDialog`, CU-02). Quien ya tiene cuenta puede iniciar sesión y vuelve a esta misma pantalla.
  *
- * El asistente de compra en sí (datos que faltan → firma → pago) es la Ola 3; mientras tanto, con la cuenta lista,
- * se muestra un aviso en lugar del asistente.
+ * Con la sesión de un CLIENTE se muestra el asistente de compra (Ola 3): resumen → datos → firma → pago.
  */
 export function CompraPage() {
   const { cotizacionId } = useParams();
   const location = useLocation();
+  const [params] = useSearchParams();
+  const primaCotizadaId = params.get('prima');
   const { estado, roles } = useAuth();
   const [abierto, setAbierto] = useState(true);
   const volver = `/cotizacion/${cotizacionId ?? ''}`;
@@ -34,23 +37,23 @@ export function CompraPage() {
   if (estado === 'autenticado') {
     // Solo un CLIENTE compra (doc de dominio §14): asesores y administradores no.
     if (!roles.includes('CLIENTE')) return <UnauthorizedPage />;
+    if (!primaCotizadaId || !cotizacionId) {
+      return (
+        <section className="mx-auto max-w-xl px-4 py-10">
+          <EstadoVacio
+            titulo="Elige primero el plan que quieres comprar."
+            accion={
+              <Button asChild>
+                <Link to={volver}>Ver los planes de mi cotización</Link>
+              </Button>
+            }
+          />
+        </section>
+      );
+    }
     return (
-      <section className="mx-auto max-w-xl px-4 py-10">
-        <Card className="flex flex-col items-center gap-3 p-6 text-center">
-          <CheckCircle2 className="size-10 text-status-success" aria-hidden />
-          <h1 className="text-h2 text-navy-700">Tu cuenta está lista</h1>
-          <p className="text-ink-soft">
-            El pago en línea se activa en la siguiente etapa del proyecto. Tu cotización queda guardada en tu cuenta.
-          </p>
-          <div className="mt-2 flex flex-wrap justify-center gap-3">
-            <Button asChild>
-              <Link to={volver}>Volver a mi cotización</Link>
-            </Button>
-            <Button variant="outlineNavy" asChild>
-              <Link to="/mi-cuenta/cotizaciones">Mis cotizaciones</Link>
-            </Button>
-          </div>
-        </Card>
+      <section className="mx-auto max-w-[1000px] px-4 py-6 lg:py-10">
+        <AsistenteCompra cotizacionId={cotizacionId} primaCotizadaId={primaCotizadaId} />
       </section>
     );
   }

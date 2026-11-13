@@ -215,9 +215,27 @@ describe('Pantalla de compra: el cliente nuevo no queda sin salida', () => {
   });
 
   it('un cliente con sesión ya no ve el registro', async () => {
+    // Con la cuenta lista se entra directo al asistente de compra (Ola 3), sin diálogo de registro.
+    server.use(
+      http.get(`${API}/compras/resumen`, () =>
+        HttpResponse.json({
+          cotizacionId: 'cot-1',
+          primaCotizadaId: 'p1',
+          ordenId: null,
+          aseguradora: 'Rímac',
+          plan: 'Oro',
+          sumaAsegurada: '15000.00',
+          primaAnual: '640.40',
+          descuento: null,
+          primaFinal: '640.40',
+          pago: { UNICO: { total: '640.40' }, CUOTAS: null, maxCuotas: 1 },
+        }),
+      ),
+      http.get(`${API}/compras/cot-1/campos-faltantes`, () => HttpResponse.json({ campos: [] })),
+    );
     renderCompra({ roles: ['CLIENTE'] });
 
-    expect(await screen.findByRole('heading', { name: /tu cuenta está lista/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /revisa tu compra/i })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 

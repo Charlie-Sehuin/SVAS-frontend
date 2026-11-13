@@ -13,7 +13,7 @@ afterEach(() => {
 afterAll(() => server.close());
 
 // jsdom no implementa matchMedia (lo usan useMediaQuery y el Toaster).
-if (!('matchMedia' in window)) {
+if (typeof window.matchMedia !== 'function') {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: (query: string) => ({
