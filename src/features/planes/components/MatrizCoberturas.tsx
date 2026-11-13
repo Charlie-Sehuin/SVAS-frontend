@@ -14,7 +14,7 @@ export function MatrizCoberturas({ comparacion }: { comparacion: ComparacionPlan
         <caption className="sr-only">Qué cubre cada plan, cobertura por cobertura</caption>
         <thead className="sticky top-0 bg-surface">
           <tr className="border-b border-line">
-            <th scope="col" className="sticky left-0 z-10 w-40 bg-surface p-3 text-small text-ink-soft sm:w-56">
+            <th scope="col" className="sticky left-0 z-20 w-40 border-r border-line bg-surface p-3 text-small text-ink-soft sm:w-56">
               Cobertura
             </th>
             {planes.map((p) => (
@@ -27,8 +27,11 @@ export function MatrizCoberturas({ comparacion }: { comparacion: ComparacionPlan
         </thead>
         <tbody>
           {filas.map((f) => (
-            <tr key={f.codigo} className="border-b border-line transition-colors last:border-0 hover:bg-brand-50">
-              <th scope="row" className="sticky left-0 z-10 bg-inherit p-3 align-top font-bold text-navy-700">
+            <tr key={f.codigo} className="group/fila border-b border-line transition-colors last:border-0 hover:bg-brand-50">
+              <th
+                scope="row"
+                className="sticky left-0 z-10 w-40 border-r border-line bg-surface p-3 align-top font-bold text-navy-700 transition-colors group-hover/fila:bg-brand-50 sm:w-56"
+              >
                 {f.nombre}
               </th>
               {f.valores.map((v, i) => (
