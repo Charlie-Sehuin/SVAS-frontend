@@ -255,7 +255,8 @@ describe('CasoDetallePage', () => {
     expect(screen.getByText('Toyota Corolla 2022')).toBeInTheDocument();
     // El plan sale en la lista de planes cotizados y también como opción para negociar.
     expect(screen.getAllByText('Rímac · Plan Oro').length).toBeGreaterThan(0);
-    expect(screen.getByText('No disponible para este vehículo')).toBeInTheDocument();
+    // Sale en la lista de planes cotizados y también (apagado) en la de negociar.
+    expect(screen.getAllByText('No disponible para este vehículo')).toHaveLength(2);
   });
 
   it('un caso pendiente se toma desde aquí y mientras tanto no se puede negociar ni cerrar', async () => {
@@ -293,7 +294,7 @@ describe('CasoDetallePage', () => {
     await user.click(screen.getByRole('button', { name: 'Aplicar descuento' }));
     expect(screen.getByText('Elige el plan al que le aplicas el descuento')).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText(/^plan/i), PLAN);
+    await user.click(screen.getByRole('radio', { name: /Rímac · Plan Oro/ }));
     await user.type(screen.getByLabelText(/porcentaje de descuento/i), '12');
     await user.click(screen.getByRole('button', { name: 'Aplicar descuento' }));
     expect(screen.getByText('El máximo permitido es 10 %')).toBeInTheDocument();
@@ -316,10 +317,30 @@ describe('CasoDetallePage', () => {
     const user = userEvent.setup();
     renderCaso();
     await screen.findByRole('heading', { name: 'Negociar descuento' });
-    await user.selectOptions(screen.getByLabelText(/^plan/i), PLAN);
+    await user.click(screen.getByRole('radio', { name: /Rímac · Plan Oro/ }));
     await user.type(screen.getByLabelText(/porcentaje de descuento/i), '5');
     await user.click(screen.getByRole('button', { name: 'Aplicar descuento' }));
     expect(await screen.findByText('Esta cotización ya tiene un descuento negociado')).toBeInTheDocument();
+  });
+
+  it('muestra todos los planes con su precio para elegir; los no disponibles quedan apagados y se marca el que ya tiene descuento vigente', async () => {
+    mockCaso(
+      caso({
+        descuentos: [{ id: 'd1', planId: PLAN, tipo: 'NEGOCIADO', porcentaje: '8.50', aceptado: true, fecha: hace(1) }],
+      }),
+    );
+    renderCaso();
+    const formulario = (await screen.findByRole('heading', { name: 'Negociar descuento' })).closest('section')!;
+    const lista = within(formulario);
+    const oro = lista.getByRole('radio', { name: /Rímac · Plan Oro/ });
+    expect(oro).toBeEnabled();
+    // Precios del backend, tal cual, y el descuento vigente en texto sobre su plan.
+    expect(lista.getByLabelText('53 dólares con 37 centavos al mes')).toBeInTheDocument();
+    expect(lista.getByLabelText('640 dólares con 40 centavos al año')).toBeInTheDocument();
+    expect(lista.getByText('Descuento vigente: 8,5 %')).toBeInTheDocument();
+    const apagado = lista.getByRole('radio', { name: /Qualitas · Plan Plus/ });
+    expect(apagado).toBeDisabled();
+    expect(lista.getByText('No disponible para este vehículo')).toBeInTheDocument();
   });
 
   it('el historial de descuentos dice en texto si fue aceptado', async () => {
@@ -332,8 +353,9 @@ describe('CasoDetallePage', () => {
       }),
     );
     renderCaso();
-    expect(await screen.findByText('Aceptado')).toBeInTheDocument();
-    expect(screen.getByText('Sin aceptar')).toBeInTheDocument();
+    expect(await screen.findByText('Vigente')).toBeInTheDocument();
+    expect(screen.getByText('No vigente')).toBeInTheDocument();
+    expect(screen.getByText(/Solo queda vigente un descuento por cotización: el mayor/)).toBeInTheDocument();
     expect(screen.getByText('8,5 %')).toBeInTheDocument();
   });
 

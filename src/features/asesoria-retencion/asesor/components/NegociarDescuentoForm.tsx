@@ -2,11 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { BadgePercent } from 'lucide-react';
 import { isApiError } from '../../../../shared/lib/api-client';
 import { aDecimal, formatearFecha, formatearPorcentaje } from '../../../../shared/lib/format';
+import { cn } from '../../../../shared/lib/utils';
 import type { SolicitudDetalle } from '../../../../shared/types/api';
 import { Button } from '../../../../shared/ui/button';
 import { Field } from '../../../../shared/ui/field';
 import { Input } from '../../../../shared/ui/input';
-import { Select } from '../../../../shared/ui/select';
+import { MoneyValue } from '../../../../shared/ui/domain/MoneyValue';
+import { Badge } from '../../../../shared/ui/badge';
 import { ErrorToast, SuccessToast } from '../../../../shared/ui/domain/toasts';
 import { useAplicarDescuento } from '../../hooks/useAsesoria';
 
@@ -24,14 +26,13 @@ interface Props {
  */
 export function NegociarDescuentoForm({ caso, habilitado }: Props) {
   const aplicar = useAplicarDescuento(caso.id);
-  const planes = caso.primas.filter((p) => p.disponible);
   const [planId, setPlanId] = useState('');
   const [porcentaje, setPorcentaje] = useState('');
   const [error, setError] = useState<string | undefined>();
+  const [errorPlan, setErrorPlan] = useState<string | undefined>();
 
   function validar(): string | undefined {
     const v = porcentaje.trim();
-    if (!planId) return 'Elige el plan al que le aplicas el descuento';
     if (!FORMATO_PORCENTAJE.test(v)) return 'Ingresa el porcentaje como número, p. ej. 8.50';
     if (aDecimal(v).lte(0)) return 'El descuento debe ser mayor que 0';
     if (aDecimal(v).gt(caso.descuentoMaximo)) return `El máximo permitido es ${formatearPorcentaje(caso.descuentoMaximo)}`;
@@ -40,9 +41,11 @@ export function NegociarDescuentoForm({ caso, habilitado }: Props) {
 
   function enviar(e: FormEvent) {
     e.preventDefault();
+    const sinPlan = planId ? undefined : 'Elige el plan al que le aplicas el descuento';
     const problema = validar();
+    setErrorPlan(sinPlan);
     setError(problema);
-    if (problema) return;
+    if (sinPlan || problema) return;
     aplicar.mutate(
       { planId, porcentaje: porcentaje.trim() },
       {
@@ -73,18 +76,63 @@ export function NegociarDescuentoForm({ caso, habilitado }: Props) {
 
       {habilitado ? (
         <form onSubmit={enviar} noValidate className="mt-4">
-          <Field label="Plan" required>
-            {(p) => (
-              <Select {...p} value={planId} onChange={(e) => setPlanId(e.target.value)}>
-                <option value="">Elige un plan</option>
-                {planes.map((x) => (
-                  <option key={x.planId} value={x.planId}>
-                    {x.aseguradora} · Plan {x.plan}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
+          <fieldset className="mb-4">
+            <legend className="mb-1.5 text-small font-bold text-navy-700">
+              Plan <span aria-hidden className="text-brand-600">*</span>
+            </legend>
+            <ul className="space-y-2">
+              {caso.primas.map((x) => {
+                const disponible = x.disponible;
+                const elegido = planId === x.planId;
+                const vigente = caso.descuentos.find((d) => d.planId === x.planId && d.aceptado);
+                return (
+                  <li key={x.planId}>
+                    <label
+                      className={cn(
+                        'flex min-h-11 items-start gap-3 rounded-xl border-2 bg-surface p-3 transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-300',
+                        disponible ? 'cursor-pointer' : 'cursor-not-allowed opacity-60',
+                        elegido ? 'border-brand-500 bg-brand-50' : 'border-line',
+                        disponible && !elegido && 'hover:border-navy-300',
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="plan-descuento"
+                        value={x.planId}
+                        checked={elegido}
+                        disabled={!disponible}
+                        onChange={() => setPlanId(x.planId)}
+                        aria-describedby={errorPlan ? 'error-plan' : undefined}
+                        className="mt-1 size-5 accent-brand-500"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold text-navy-700">
+                          {x.aseguradora} · Plan {x.plan}
+                        </span>
+                        {disponible && x.primaMensual && x.prima ? (
+                          <span className="block text-small text-ink-soft">
+                            <MoneyValue value={x.primaMensual} sufijo="/ mes" sufijoAria="al mes" /> · <MoneyValue value={x.prima} sufijo="al año" />
+                          </span>
+                        ) : (
+                          <span className="block text-small text-ink-soft">No disponible para este vehículo</span>
+                        )}
+                        {vigente ? (
+                          <Badge tone="success" className="mt-1">
+                            Descuento vigente: {formatearPorcentaje(vigente.porcentaje)}
+                          </Badge>
+                        ) : null}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+            {errorPlan ? (
+              <p id="error-plan" role="alert" className="mt-1.5 text-small text-status-danger">
+                {errorPlan}
+              </p>
+            ) : null}
+          </fieldset>
           <Field label="Porcentaje de descuento" help={`Hasta ${formatearPorcentaje(caso.descuentoMaximo)}`} error={error} required>
             {(p) => (
               <Input
@@ -105,7 +153,8 @@ export function NegociarDescuentoForm({ caso, habilitado }: Props) {
         <p className="mt-3 text-small text-ink-soft">Solo el asesor que atiende el caso puede negociar descuentos.</p>
       )}
 
-      <h3 className="mb-2 mt-5 font-bold text-navy-700">Descuentos de este caso</h3>
+      <h3 className="mb-1 mt-5 font-bold text-navy-700">Descuentos de este caso</h3>
+      <p className="mb-2 text-caption text-ink-soft">Solo queda vigente un descuento por cotización: el mayor. Si propones uno igual o menor, se guarda pero no cambia el vigente.</p>
       {caso.descuentos.length === 0 ? (
         <p className="text-small text-ink-soft">Todavía no hay descuentos negociados.</p>
       ) : (
@@ -115,7 +164,7 @@ export function NegociarDescuentoForm({ caso, habilitado }: Props) {
               <span className="flex-1 font-bold text-navy-700">{nombrePlan(d.planId)}</span>
               <span>{formatearPorcentaje(d.porcentaje)}</span>
               <span className="text-ink-soft">{d.tipo === 'NEGOCIADO' ? 'Negociado' : 'Primera compra'}</span>
-              <span className={d.aceptado ? 'font-bold text-status-success' : 'text-ink-soft'}>{d.aceptado ? 'Aceptado' : 'Sin aceptar'}</span>
+              <span className={d.aceptado ? 'font-bold text-status-success' : 'text-ink-soft'}>{d.aceptado ? 'Vigente' : 'No vigente'}</span>
               <span className="text-ink-soft">{formatearFecha(d.fecha)}</span>
             </li>
           ))}
