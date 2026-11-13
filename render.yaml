@@ -1,0 +1,50 @@
+# Despliegue del frontend en Render como sitio estático (Blueprint).
+# Guía paso a paso: README.md → "Despliegue en Render".
+#
+# Las variables VITE_* se leen al CONSTRUIR (no al abrir la página): si cambian, hay que volver a desplegar.
+# Ninguna es secreta: la anon key de Supabase es pública por diseño. La service role key y el JWT secret NUNCA van aquí.
+
+services:
+  - type: web
+    runtime: static
+    name: svas-frontend
+    # `npm ci` instala exactamente lo del package-lock; el build corre typecheck y luego vite build.
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      # Vite 8 pide Node 20.19+ o 22.12+; el proyecto usa 24 (package.json → engines).
+      - key: NODE_VERSION
+        value: "24"
+      - key: VITE_API_URL
+        value: https://svas-production.up.railway.app/api/v1
+      # Se escriben en el panel de Render (copiarlos de svas-frontend/.env local).
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+    routes:
+      # SPA: cualquier ruta (/cotizar, /app/reportes/ventas…) se resuelve en el navegador con React Router.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      # Mismo contenido que vercel.json. Si cambia el dominio del backend, cambiarlo aquí en connect-src.
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://svas-production.up.railway.app https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+      # Los archivos de /assets llevan el hash en el nombre: pueden guardarse un año sin riesgo.
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable

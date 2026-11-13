@@ -64,8 +64,18 @@ src/
 - **Token de cotización** solo en sessionStorage.
 - Tipos en `shared/types/api` copiados de los DTOs del backend; prohibido `any`.
 
-## Despliegue
+## Despliegue en Render
 
-Vercel con `vercel.json` (rewrite SPA + CSP que solo permite `connect-src` a la API y a Supabase).
-Variables: `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. El backend debe tener
-`FRONTEND_URL` con la URL de Vercel (CORS).
+Sitio estático de Render, configurado en `render.yaml` (Blueprint). Las cabeceras de seguridad y la política CSP
+(solo permite `connect-src` a la API de Railway y a Supabase) están ahí; `vercel.json` queda como alternativa.
+
+1. En Render: **New → Blueprint** → elegir este repo (`SVAS-frontend`, rama `main`). Render lee `render.yaml`.
+2. Pide dos valores (los demás ya vienen en el archivo). Cópialos de tu `.env` local:
+   `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`. No son secretos (la anon key es pública por diseño).
+3. Cuando termine el primer despliegue, Render da la URL (`https://svas-frontend.onrender.com` o similar).
+4. En Railway (servicio del backend → Variables) pon `FRONTEND_URL` con esa URL **sin barra final** y deja que se
+   redespliegue: el backend solo acepta (CORS) ese origen y la usa para armar los enlaces de retoma y de compra.
+5. Abre la URL de Render y prueba: la portada, iniciar sesión y cotizar un vehículo.
+
+Las variables `VITE_*` se leen al **construir**: si las cambias, hay que volver a desplegar (Manual Deploy).
+Si cambia el dominio del backend, también hay que cambiarlo en `connect-src` dentro de `render.yaml`.
