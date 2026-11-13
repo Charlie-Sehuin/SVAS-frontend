@@ -42,7 +42,7 @@ describe('app shell', () => {
     expect(within(dialogo).getByRole('radio', { name: /tengo una duda/i })).toBeChecked();
   });
 
-  it('PublicLayout muestra "Hablar con un asesor" en el embudo y la leyenda de demostración', () => {
+  it('PublicLayout muestra "Hablar con un asesor" en el embudo y la leyenda de demostración', async () => {
     renderConProviders(
       <Routes>
         <Route element={<PublicLayout />}>
@@ -52,9 +52,16 @@ describe('app shell', () => {
       { ruta: '/cotizar' },
     );
     expect(screen.getByText('contenido')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /hablar con un asesor/i })).toBeInTheDocument();
+    // Sin cotización no hay enlace `tel:` (en la computadora abre el aviso "Elegir una aplicación"): se muestra el número.
+    expect(screen.queryByRole('link', { name: /hablar con un asesor/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /hablar con un asesor/i })).toBeInTheDocument();
     expect(screen.getByText('Paso 1 de 3 ·', { exact: false })).toBeInTheDocument();
     expect(screen.getAllByRole('note').length).toBeGreaterThan(0);
+
+    await userEvent.click(screen.getByRole('button', { name: /hablar con un asesor/i }));
+    const dialogo = await screen.findByRole('dialog', { name: /habla con un asesor/i });
+    expect(within(dialogo).getByText('(01) 680-3770')).toBeInTheDocument();
+    expect(within(dialogo).getByRole('link', { name: /llamar ahora/i })).toHaveAttribute('href', 'tel:+5116803770');
   });
 
   it('RoleGuard manda al login al anónimo y muestra "sin acceso" al rol equivocado', () => {

@@ -34,6 +34,8 @@ const SolicitarAsesoriaDialog = lazy(() =>
   import('../features/asesoria-retencion/cliente/SolicitarAsesoriaDialog').then((m) => ({ default: m.SolicitarAsesoriaDialog })),
 );
 
+const LlamarAsesorDialog = lazy(() => import('./LlamarAsesorDialog').then((m) => ({ default: m.LlamarAsesorDialog })));
+
 /** Cotización de la pantalla actual (comparativo, Prueba de Choque o compra), para pedir asesoría sobre ella. */
 export function cotizacionDeLaRuta(pathname: string): string | null {
   const m = /^\/(?:cotizacion|compra)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\/prueba)?\/?$/i.exec(pathname);
@@ -138,6 +140,7 @@ function HeaderLanding() {
 
 function HeaderEmbudo({ paso, cotizacionId }: { paso: PasoEmbudo; cotizacionId: string | null }) {
   const [asesoriaAbierta, setAsesoriaAbierta] = useState(false);
+  const [llamarAbierto, setLlamarAbierto] = useState(false);
   const claseBoton = 'ml-auto shrink-0 border-white bg-transparent text-white hover:bg-white/10 focus-visible:outline-white';
   const contenido = (
     <>
@@ -158,9 +161,9 @@ function HeaderEmbudo({ paso, cotizacionId }: { paso: PasoEmbudo; cotizacionId: 
             {contenido}
           </Button>
         ) : (
-          // Sin cotización (p. ej. al empezar a cotizar) no hay sobre qué pedir asesoría: se ofrece llamar.
-          <Button variant="secondary" size="sm" className={claseBoton} asChild>
-            <a href={TELEFONO_HREF}>{contenido}</a>
+          // Sin cotización (p. ej. al empezar a cotizar) no hay sobre qué pedir asesoría: se muestra el teléfono.
+          <Button variant="secondary" size="sm" className={claseBoton} onClick={() => setLlamarAbierto(true)}>
+            {contenido}
           </Button>
         )}
         <MenuCuenta variante="oscuro" />
@@ -168,6 +171,11 @@ function HeaderEmbudo({ paso, cotizacionId }: { paso: PasoEmbudo; cotizacionId: 
       {asesoriaAbierta && cotizacionId ? (
         <Suspense fallback={null}>
           <SolicitarAsesoriaDialog open onOpenChange={setAsesoriaAbierta} cotizacionId={cotizacionId} />
+        </Suspense>
+      ) : null}
+      {llamarAbierto ? (
+        <Suspense fallback={null}>
+          <LlamarAsesorDialog open onOpenChange={setLlamarAbierto} />
         </Suspense>
       ) : null}
       {paso > 0 ? (
