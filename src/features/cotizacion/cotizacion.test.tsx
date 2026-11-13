@@ -129,7 +129,7 @@ describe('Asistente de cotizar', () => {
     await completarPaso1(user);
     await completarPaso2(user);
     await completarPaso3(user);
-    await user.click(screen.getByRole('button', { name: /ver mis cotizaciones/i }));
+    await user.click(screen.getByRole('button', { name: /ver planes y precios/i }));
 
     expect(await screen.findByText('destino del comparativo')).toBeInTheDocument();
     // Sin placa ni clase: no se mandan. Teléfono sin espacios, correo en minúsculas, año como número.
@@ -157,7 +157,7 @@ describe('Asistente de cotizar', () => {
     await completarPaso1(user, { placa: 'abc123', clase: 'Camioneta' });
     await completarPaso2(user);
     await completarPaso3(user);
-    await user.click(screen.getByRole('button', { name: /ver mis cotizaciones/i }));
+    await user.click(screen.getByRole('button', { name: /ver planes y precios/i }));
 
     await screen.findByText('destino del comparativo');
     expect(cuerpo.vehiculo).toMatchObject({ placa: 'ABC123', clase: 'Camioneta' });
@@ -206,7 +206,7 @@ describe('Asistente de cotizar', () => {
     await completarPaso1(user);
     await completarPaso2(user);
     await completarPaso3(user);
-    await user.click(screen.getByRole('button', { name: /ver mis cotizaciones/i }));
+    await user.click(screen.getByRole('button', { name: /ver planes y precios/i }));
 
     expect(await screen.findByRole('heading', { name: '¿Dónde usas tu auto?' })).toBeInTheDocument();
     expect(await screen.findByText('Elige un distrito de la lista')).toBeInTheDocument();
@@ -228,7 +228,7 @@ describe('Asistente de cotizar', () => {
     await completarPaso1(user);
     await completarPaso2(user);
     await completarPaso3(user);
-    await user.click(screen.getByRole('button', { name: /ver mis cotizaciones/i }));
+    await user.click(screen.getByRole('button', { name: /ver planes y precios/i }));
 
     const alerta = await screen.findByRole('alert');
     expect(alerta).toHaveTextContent('Atendemos hasta 2 vehículos de uso particular por persona.');

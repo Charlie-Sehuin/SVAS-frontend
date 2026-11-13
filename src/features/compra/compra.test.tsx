@@ -7,6 +7,7 @@ import { server } from '../../test/msw/server';
 import { API } from '../../test/msw/handlers';
 import { renderConProviders } from '../../test/render';
 import { Toaster } from '../../shared/ui/toaster';
+import { useCotizacionTokenStore } from '../../shared/stores/useCotizacionTokenStore';
 import type {
   ContenidoPlanContratado,
   EstadoCompra,
@@ -189,6 +190,39 @@ describe('Asistente de compra', () => {
     expect(paso.getByLabelText('651 dólares con 79 centavos')).toBeInTheDocument();
     expect(paso.getByText('Se aplicó tu 5 % de descuento por primera compra.')).toBeInTheDocument();
     expect(paso.getByText('Paso 1 de 3', { exact: false })).toBeInTheDocument();
+  });
+
+  it('si cotizó sin cuenta y entró con una cuenta que ya tenía, primero vincula la cotización (si no, "La cotización no existe")', async () => {
+    useCotizacionTokenStore.getState().guardar(COT, 'token-anonimo');
+    const orden: string[] = [];
+    mockAsistente({});
+    server.use(
+      http.patch(`${API}/cotizaciones/${COT}/cliente`, ({ request }) => {
+        orden.push(`vincular(${request.headers.get('X-Cotizacion-Token')})`);
+        return HttpResponse.json({ cotizacionId: COT, clienteId: 'cli-1' });
+      }),
+      http.get(`${API}/compras/resumen`, () => {
+        orden.push('resumen');
+        return HttpResponse.json(resumenMock());
+      }),
+    );
+    renderCompra();
+    expect(await screen.findByRole('heading', { name: 'Revisa tu compra' })).toBeInTheDocument();
+    expect(orden).toEqual(['vincular(token-anonimo)', 'resumen']);
+    useCotizacionTokenStore.getState().limpiar();
+  });
+
+  it('si la cotización es de otra cuenta, muestra el mensaje del backend y no carga la compra', async () => {
+    useCotizacionTokenStore.getState().guardar(COT, 'token-anonimo');
+    mockAsistente({});
+    server.use(
+      http.patch(`${API}/cotizaciones/${COT}/cliente`, () =>
+        HttpResponse.json({ statusCode: 403, message: 'Esta cotización pertenece a otra cuenta' }, { status: 403 }),
+      ),
+    );
+    renderCompra();
+    expect(await screen.findByText('Esta cotización pertenece a otra cuenta')).toBeInTheDocument();
+    useCotizacionTokenStore.getState().limpiar();
   });
 
   it('si el backend rechaza el plan, muestra su mensaje tal cual y deja volver', async () => {

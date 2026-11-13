@@ -219,7 +219,7 @@ function WizardForm({ catalogo }: { catalogo: CatalogoCampos }) {
               </Button>
             ) : (
               <Button type="submit" size="lg" className="flex-1 md:flex-none" loading={cotizar.isPending} loadingText="Cotizando…">
-                Ver mis cotizaciones
+                Ver planes y precios
               </Button>
             )}
           </div>

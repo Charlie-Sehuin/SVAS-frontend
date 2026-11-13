@@ -18,6 +18,7 @@ import {
   useGuardarDatosCompra,
   usePagar,
   useResumenCompra,
+  useVinculoCotizacion,
 } from '../hooks/useCompra';
 import { ResumenCompraCard } from './ResumenCompraCard';
 import { SelectorModoPago } from './SelectorModoPago';
@@ -38,8 +39,9 @@ export function AsistenteCompra({ cotizacionId, primaCotizadaId }: Props) {
   const navigate = useNavigate();
   const volver = `/cotizacion/${cotizacionId}`;
 
-  const resumenQ = useResumenCompra(cotizacionId, primaCotizadaId);
-  const camposQ = useCamposFaltantes(cotizacionId);
+  const vinculo = useVinculoCotizacion(cotizacionId);
+  const resumenQ = useResumenCompra(cotizacionId, primaCotizadaId, vinculo.listo);
+  const camposQ = useCamposFaltantes(cotizacionId, vinculo.listo);
   const resumen = resumenQ.data;
 
   // Se decide UNA vez, al primer dato: si después de guardar ya no falta nada, el paso "Tus datos" no desaparece
@@ -70,10 +72,13 @@ export function AsistenteCompra({ cotizacionId, primaCotizadaId }: Props) {
     tituloRef.current?.focus();
   }, [paso]);
 
-  if (resumenQ.isError) {
+  if (vinculo.isError || resumenQ.isError) {
     return (
       <div className="space-y-4">
-        <EstadoError error={resumenQ.error} onRetry={() => void resumenQ.refetch()} />
+        <EstadoError
+          error={vinculo.isError ? vinculo.error : resumenQ.error}
+          onRetry={() => void (vinculo.isError ? vinculo.refetch() : resumenQ.refetch())}
+        />
         <div className="text-center">
           <Button variant="outlineNavy" asChild>
             <Link to={volver}>Volver a mi cotización</Link>

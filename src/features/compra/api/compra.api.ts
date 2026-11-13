@@ -15,6 +15,14 @@ import type {
 
 /** Funciones puras sobre `api-client` (arquitectura §6.7). Solo el CLIENTE con sesión llama a estas rutas. */
 
+/**
+ * Lleva una cotización anónima a la cuenta con sesión (`PATCH /cotizaciones/:id/cliente`). Hace falta cuando la persona
+ * cotizó sin cuenta y luego INICIÓ SESIÓN con una cuenta que ya tenía: sin esto, las rutas de compra no ven la cotización
+ * (404 "La cotización no existe"). El `api-client` manda el Bearer y el `X-Cotizacion-Token`. Es idempotente.
+ */
+export const vincularCotizacion = (cotizacionId: string) =>
+  api.patch(`cotizaciones/${cotizacionId}/cliente`, { json: {} }).json<{ cotizacionId: string; clienteId: string }>();
+
 export const obtenerResumenCompra = (cotizacionId: string, primaCotizadaId: string) =>
   api.get('compras/resumen', { searchParams: { cotizacionId, primaCotizadaId } }).json<ResumenCompra>();
 

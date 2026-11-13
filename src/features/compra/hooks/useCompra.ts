@@ -1,9 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/useAuth';
 import { qk } from '../../../shared/lib/query-keys';
+import { useCotizacionTokenStore } from '../../../shared/stores/useCotizacionTokenStore';
 import { WarningToast } from '../../../shared/ui/domain/toasts';
 import * as compraApi from '../api/compra.api';
 import { guardarArchivo } from '../lib/descarga';
+
+/**
+ * Antes de cargar la compra, si esta pestaña tiene el token de la cotización anónima, se vincula a la cuenta (una vez).
+ * `listo` es `true` cuando no hay nada que vincular o ya se vinculó; mientras tanto la compra no debe pedir datos.
+ */
+export function useVinculoCotizacion(cotizacionId: string | undefined) {
+  const hayToken = useCotizacionTokenStore((s) => (cotizacionId ? s.tokens[cotizacionId] !== undefined : false));
+  const q = useQuery({
+    queryKey: ['compra', 'vinculo', cotizacionId ?? ''],
+    queryFn: () => compraApi.vincularCotizacion(cotizacionId!),
+    enabled: hayToken && !!cotizacionId,
+    staleTime: Infinity,
+    retry: false,
+  });
+  return { listo: !hayToken || q.isSuccess, error: q.error, refetch: q.refetch, isError: q.isError };
+}
 
 /** `GET /compras/resumen`. Sin `staleTime` largo: el descuento y los montos vienen del backend y son lo que se paga. */
 export const useResumenCompra = (cotizacionId: string | undefined, primaCotizadaId: string | null, habilitado = true) =>
