@@ -20,6 +20,9 @@ const LoginPage = lazy(() => import('./auth/LoginPage').then((m) => ({ default: 
 const CotizarPage = lazy(() => import('./features/cotizacion/pages/CotizarPage').then((m) => ({ default: m.CotizarPage })));
 const ComparativoPage = lazy(() => import('./features/cotizacion/pages/ComparativoPage').then((m) => ({ default: m.ComparativoPage })));
 const CompraPage = lazy(() => import('./features/compra/pages/CompraPage').then((m) => ({ default: m.CompraPage })));
+const PruebaChoquePage = lazy(() =>
+  import('./features/prueba-choque/pages/PruebaChoquePage').then((m) => ({ default: m.PruebaChoquePage })),
+);
 const ConfirmacionPage = lazy(() =>
   import('./features/compra/pages/ConfirmacionPage').then((m) => ({ default: m.ConfirmacionPage })),
 );
@@ -72,7 +75,7 @@ export const router = createBrowserRouter([
       { path: '/', element: lazyPage(<LandingPage />) },
       { path: '/cotizar', element: lazyPage(<CotizarPage />) },
       { path: '/cotizacion/:id', element: lazyPage(<ComparativoPage />) },
-      { path: '/cotizacion/:id/prueba', element: pendiente('Prueba de Choque', 2) },
+      { path: '/cotizacion/:id/prueba', element: lazyPage(<PruebaChoquePage />) },
       { path: '/comparar', element: pendiente('Comparar planes', 2) },
       { path: '/retoma/:token', element: pendiente('Retomar mi cotización', 2) },
       // La compra es pública a propósito: un cliente NUEVO no tiene cuenta y se la crea aquí mismo, sin salir del

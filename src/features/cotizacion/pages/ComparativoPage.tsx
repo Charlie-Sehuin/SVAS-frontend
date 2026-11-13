@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Car, Info, MapPin } from 'lucide-react';
+import { Car, Info, MapPin, ShieldAlert } from 'lucide-react';
 import { isApiError } from '../../../shared/lib/api-client';
 import { formatearMonto } from '../../../shared/lib/format';
 import { Button } from '../../../shared/ui/button';
@@ -138,6 +138,20 @@ export function ComparativoPage() {
         </div>
       ) : null}
       {hayDerivacion && !comprada ? <DerivacionBanner motivo={cotizacion.motivoDerivacion} /> : null}
+
+      {cotizacion.primas.length > 0 && !comprada ? (
+        <div className="mb-5 flex flex-col items-start gap-2 rounded-xl bg-accent-50 p-4 sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex-1">
+            <p className="font-bold text-navy-700">¿Cuánto pagarías tú si te pasa algo?</p>
+            <p className="text-small text-ink-soft">Mira cuánto pagarías tú en un choque, un robo o un daño a terceros, plan por plan.</p>
+          </div>
+          <Button variant="accent" size="lg" className="w-full sm:w-auto" asChild>
+            <Link to={`/cotizacion/${cotizacion.id}/prueba`}>
+              <ShieldAlert aria-hidden /> Pon a prueba estos planes
+            </Link>
+          </Button>
+        </div>
+      ) : null}
 
       {cotizacion.primas.length > 0 ? (
         <div className="mb-5 flex flex-wrap items-end gap-3">

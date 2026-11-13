@@ -149,3 +149,8 @@
   border: 3px solid var(--color-navy-700);
   box-shadow: var(--shadow-card);
 }
+
+/* Prueba de Choque: celda "sin información" (RN-30), patrón rayado sobre el fondo apagado; solo tokens. */
+.fondo-sin-dato {
+  background: repeating-linear-gradient(135deg, var(--color-surface-muted) 0 8px, var(--color-line) 8px 9px);
+}

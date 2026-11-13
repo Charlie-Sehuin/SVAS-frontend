@@ -4,3 +4,4 @@ export * from './cotizacion.types';
 export * from './admin.types';
 export * from './salud.types';
 export * from './compra.types';
+export * from './pruebaChoque.types';

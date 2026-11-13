@@ -4,7 +4,7 @@ import { qk } from '../../../shared/lib/query-keys';
 import { useCotizacionTokenStore } from '../../../shared/stores/useCotizacionTokenStore';
 import { WarningToast } from '../../../shared/ui/domain/toasts';
 import * as compraApi from '../api/compra.api';
-import { guardarArchivo } from '../lib/descarga';
+import { guardarArchivo } from '../../../shared/lib/descarga';
 
 /**
  * Antes de cargar la compra, si esta pestaña tiene el token de la cotización anónima, se vincula a la cuenta (una vez).
