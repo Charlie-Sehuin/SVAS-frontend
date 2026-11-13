@@ -71,6 +71,10 @@ const PruebaChoqueCoberturasPage = admin(() => import('./features/administracion
 const PruebaChoqueFrecuenciasPage = admin(() => import('./features/administracion/pages/PruebaChoqueFrecuenciasPage'), 'PruebaChoqueFrecuenciasPage');
 const PruebaChoqueFactoresPage = admin(() => import('./features/administracion/pages/PruebaChoqueFactoresPage'), 'PruebaChoqueFactoresPage');
 
+const ContenidoPlanPage = admin(() => import('./features/administracion/pages/ContenidoPlanPage'), 'ContenidoPlanPage');
+const CoberturasCatalogoPage = admin(() => import('./features/administracion/pages/CoberturasCatalogoPage'), 'CoberturasCatalogoPage');
+const CompletitudContenidoPage = admin(() => import('./features/administracion/pages/CompletitudContenidoPage'), 'CompletitudContenidoPage');
+
 function Cargando() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-6" aria-busy>
@@ -166,9 +170,9 @@ export const router = createBrowserRouter([
               { path: 'admin/tarifas/simulador', element: lazyPage(<SimuladorTarifaPage />) },
               { path: 'admin/tarifas/completitud', element: lazyPage(<CompletitudTarifasPage />) },
 
-              { path: 'admin/planes/:planId/contenido', element: pendiente('Contenido del plan', 2) },
-              { path: 'admin/coberturas', element: pendiente('Catálogo de coberturas', 2) },
-              { path: 'admin/contenido/completitud', element: pendiente('Completitud del contenido de planes', 2) },
+              { path: 'admin/planes/:planId/contenido', element: lazyPage(<ContenidoPlanPage />) },
+              { path: 'admin/coberturas', element: lazyPage(<CoberturasCatalogoPage />) },
+              { path: 'admin/contenido/completitud', element: lazyPage(<CompletitudContenidoPage />) },
 
               { path: 'admin/prueba-choque/escenarios', element: lazyPage(<PruebaChoqueEscenariosPage />) },
               { path: 'admin/prueba-choque/coberturas', element: lazyPage(<PruebaChoqueCoberturasPage />) },
