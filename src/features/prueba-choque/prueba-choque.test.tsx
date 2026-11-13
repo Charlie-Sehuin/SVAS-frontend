@@ -304,14 +304,30 @@ describe('PruebaChoquePage', () => {
     const enlaces = await screen.findAllByRole('link', { name: 'Comprar este plan' });
     expect(enlaces[0]).toHaveAttribute('href', `/compra/${COT}?prima=${P1}`);
     expect(enlaces[1]).toHaveAttribute('href', `/compra/${COT}?prima=${P2}`);
-    expect(screen.getAllByRole('link', { name: /hablar con un asesor sobre esto/i })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /hablar con un asesor sobre esto/i })).toHaveLength(2);
     unmount();
 
     mockApi({ ultima: simulacionMock(), cotizacion: cotizacionMock({ opciones: ['ASESORIA'], motivoDerivacion: 'INSPECCION' }) });
     renderPrueba();
     await screen.findByRole('heading', { name: 'Tu resultado' });
     expect(screen.queryByRole('link', { name: 'Comprar este plan' })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /hablar con un asesor sobre esto/i })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /hablar con un asesor sobre esto/i })).toHaveLength(2);
+  });
+
+  it('"Hablar con un asesor sobre esto" abre la solicitud con la duda ya marcada', async () => {
+    conPantalla(true);
+    const user = userEvent.setup();
+    mockApi({ ultima: simulacionMock() });
+    renderConProviders(
+      <Routes>
+        <Route path="/cotizacion/:id/prueba" element={<PruebaChoquePage />} />
+      </Routes>,
+      { roles: ['CLIENTE'], ruta: `/cotizacion/${COT}/prueba` },
+    );
+    const botones = await screen.findAllByRole('button', { name: /hablar con un asesor sobre esto/i });
+    await user.click(botones[0]!);
+    const dialogo = await screen.findByRole('dialog', { name: /hablar con un asesor/i });
+    expect(within(dialogo).getByRole('radio', { name: /tengo una duda/i })).toBeChecked();
   });
 
   it('descarga el resumen en PDF', async () => {

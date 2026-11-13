@@ -21,6 +21,8 @@ interface PlanCardProps {
   comprada?: boolean;
   /** Abre el detalle del plan (qué cubre, qué no, requisitos). Sin él no hay botón. */
   onVerDetalle?: (prima: PrimaCotizada) => void;
+  /** Abre "Hablar con un asesor". Sin él, el botón es solo una llamada telefónica. */
+  onHablarAsesor?: () => void;
 }
 
 /**
@@ -28,7 +30,7 @@ interface PlanCardProps {
  * asegurada van debajo. Todos los montos llegan del backend como string y solo se formatean.
  * "Ver detalle" y "Comparar" llegan con el contenido de los planes (Ola 2).
  */
-export function PlanCard({ prima, cotizacionId, opciones, actualizando = false, comprada = false, onVerDetalle }: PlanCardProps) {
+export function PlanCard({ prima, cotizacionId, opciones, actualizando = false, comprada = false, onVerDetalle, onHablarAsesor }: PlanCardProps) {
   const seleccionados = useCompararPlanesStore((s) => s.planes);
   const alternarComparar = useCompararPlanesStore((s) => s.alternar);
   const marcado = seleccionados.some((p) => p.planId === prima.planId);
@@ -96,11 +98,17 @@ export function PlanCard({ prima, cotizacionId, opciones, actualizando = false, 
             </Button>
           ) : null}
           {puedeAsesor ? (
-            <Button variant="secondary" className="w-full" asChild>
-              <a href={TELEFONO_HREF}>
+            onHablarAsesor ? (
+              <Button variant="secondary" className="w-full" onClick={onHablarAsesor}>
                 <Headset aria-hidden /> Hablar con un asesor
-              </a>
-            </Button>
+              </Button>
+            ) : (
+              <Button variant="secondary" className="w-full" asChild>
+                <a href={TELEFONO_HREF}>
+                  <Headset aria-hidden /> Hablar con un asesor
+                </a>
+              </Button>
+            )
           ) : null}
         </div>
       ) : null}

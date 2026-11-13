@@ -377,7 +377,7 @@ describe('Comparativo de planes', () => {
 
     expect(await screen.findByText(/este uso requiere una inspección/i)).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /comprar este plan/i })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /hablar con un asesor/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /hablar con un asesor/i }).length).toBeGreaterThan(0);
   });
 
   it('una cotización ya convertida en póliza no ofrece comprar y bloquea la suma', async () => {

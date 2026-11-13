@@ -21,6 +21,7 @@ import {
   useResumenCompra,
   useVinculoCotizacion,
 } from '../hooks/useCompra';
+import { vieneDeRetoma } from '../../asesoria-retencion/retoma/retoma';
 import { ResumenCompraCard } from './ResumenCompraCard';
 import { SelectorModoPago } from './SelectorModoPago';
 
@@ -336,7 +337,14 @@ function PasoFirma({
     setIntento(true);
     if (!firma.trim() || !acepta) return;
     crear.mutate(
-      { cotizacionId, primaCotizadaId, aceptaCondiciones: true, firmaSimulada: firma.trim() },
+      {
+        cotizacionId,
+        primaCotizadaId,
+        aceptaCondiciones: true,
+        firmaSimulada: firma.trim(),
+        // Venta que llegó por el enlace de retoma (RN-12): el backend la atribuye a retención.
+        ...(vieneDeRetoma(cotizacionId) ? { origen: 'RETOMA' as const } : {}),
+      },
       { onSuccess: onCreada },
     );
   }

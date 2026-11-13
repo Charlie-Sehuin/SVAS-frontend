@@ -8,6 +8,7 @@ import { API } from '../../test/msw/handlers';
 import { renderConProviders } from '../../test/render';
 import { Toaster } from '../../shared/ui/toaster';
 import { useCotizacionTokenStore } from '../../shared/stores/useCotizacionTokenStore';
+import { marcarComoRetoma } from '../asesoria-retencion/retoma/retoma';
 import type {
   ContenidoPlanContratado,
   EstadoCompra,
@@ -305,6 +306,19 @@ describe('Asistente de compra', () => {
 
     expect(await screen.findByRole('heading', { name: 'Elige cómo pagar' })).toBeInTheDocument();
     expect(cuerpos[0]).toEqual({ cotizacionId: COT, primaCotizadaId: PRIMA, aceptaCondiciones: true, firmaSimulada: 'Ana Cliente' });
+  });
+
+  it('una compra que llegó por el enlace de retoma manda origen RETOMA al crear la orden', async () => {
+    marcarComoRetoma(COT);
+    const user = userEvent.setup();
+    const { cuerpos } = mockAsistente({});
+    renderCompra();
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }));
+    await user.type(screen.getByLabelText(/Tu firma/), 'Ana Cliente');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Firmar y continuar' }));
+    await screen.findByRole('heading', { name: 'Elige cómo pagar' });
+    expect(cuerpos[0]).toMatchObject({ cotizacionId: COT, origen: 'RETOMA' });
   });
 
   it('si crear la compra falla con 409, muestra el mensaje del backend y vuelve al comparativo', async () => {

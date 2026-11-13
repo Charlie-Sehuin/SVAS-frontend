@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Headset, ShieldCheck } from 'lucide-react';
 import Decimal from 'decimal.js';
-import { TELEFONO_HREF } from '../../../shared/lib/contacto';
 import type { PosicionRanking } from '../../../shared/types/api';
 import { Badge } from '../../../shared/ui/badge';
 import { Button } from '../../../shared/ui/button';
@@ -13,6 +12,8 @@ interface Props {
   /** Opciones de venta de la cotización (RN-01..04): sin `COMPRA_INMEDIATA` no hay botón de comprar. */
   puedeComprar: boolean;
   puedeAsesor: boolean;
+  /** Abre "Hablar con un asesor" con la duda ya marcada. */
+  onHablarAsesor: () => void;
 }
 
 /**
@@ -20,7 +21,7 @@ interface Props {
  * pagarías tú en promedio. El ancho de la barra es solo visual (proporción entre planes); los montos son los del backend.
  * Cada fila dice en texto lo mismo que la barra.
  */
-export function RankingCostoReal({ ranking, cotizacionId, puedeComprar, puedeAsesor }: Props) {
+export function RankingCostoReal({ ranking, cotizacionId, puedeComprar, puedeAsesor, onHablarAsesor }: Props) {
   const mayor = ranking.reduce((m, p) => Decimal.max(m, p.costoRealAnual), new Decimal(0));
   const mejor = ranking.find((p) => p.posicion === 1 && p.datosCompletos);
 
@@ -82,10 +83,8 @@ export function RankingCostoReal({ ranking, cotizacionId, puedeComprar, puedeAse
                   </Button>
                 ) : null}
                 {puedeAsesor ? (
-                  <Button variant="secondary" className="w-full sm:w-auto" asChild>
-                    <a href={TELEFONO_HREF}>
-                      <Headset aria-hidden /> Hablar con un asesor sobre esto
-                    </a>
+                  <Button variant="secondary" className="w-full sm:w-auto" onClick={onHablarAsesor}>
+                    <Headset aria-hidden /> Hablar con un asesor sobre esto
                   </Button>
                 ) : null}
               </div>

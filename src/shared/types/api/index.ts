@@ -6,3 +6,4 @@ export * from './salud.types';
 export * from './compra.types';
 export * from './pruebaChoque.types';
 export * from './planes.types';
+export * from './asesoria.types';

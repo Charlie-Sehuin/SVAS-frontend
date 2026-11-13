@@ -9,6 +9,7 @@ import { Skeleton } from '../../../shared/ui/skeleton';
 import { EstadoError } from '../../../shared/ui/domain/EstadoVacio';
 import { ErrorToast } from '../../../shared/ui/domain/toasts';
 import { MoneyValue } from '../../../shared/ui/domain/MoneyValue';
+import { SolicitarAsesoriaDialog } from '../../asesoria-retencion/cliente/SolicitarAsesoriaDialog';
 import { useResumenCotizacion } from '../../cotizacion/hooks/useCotizacion';
 import { MatrizEscenarios } from '../components/MatrizEscenarios';
 import { PerfilRiesgoDialog } from '../components/PerfilRiesgoDialog';
@@ -32,6 +33,7 @@ export function PruebaChoquePage() {
   const ejecutar = useEjecutarPruebaChoque(id);
   const pdf = useDescargarResumen(id);
   const [abierto, setAbierto] = useState(false);
+  const [asesoriaAbierta, setAsesoriaAbierta] = useState(false);
 
   // Primera vez (404 → `null`): las preguntas se abren solas, una vez.
   const yaAbrio = useRef(false);
@@ -127,7 +129,7 @@ export function PruebaChoquePage() {
                   Zona de riesgo de tu distrito: {TEXTO_ZONA[sim.zona]} · Simulado el {formatearFecha(sim.fecha, 'larga')}
                 </p>
               </div>
-              <RankingCostoReal ranking={sim.ranking} cotizacionId={id} puedeComprar={puedeComprar} puedeAsesor={puedeAsesor} />
+              <RankingCostoReal ranking={sim.ranking} cotizacionId={id} puedeComprar={puedeComprar} puedeAsesor={puedeAsesor} onHablarAsesor={() => setAsesoriaAbierta(true)} />
               <p className="mt-3 text-caption text-ink-soft">
                 <span className="font-bold">Costo real al año</span> = lo que pagas de prima + lo que pagarías tú, en promedio, en los
                 siniestros del año.
@@ -177,6 +179,7 @@ export function PruebaChoquePage() {
         </>
       )}
 
+      <SolicitarAsesoriaDialog open={asesoriaAbierta} onOpenChange={setAsesoriaAbierta} cotizacionId={id} motivoInicial="DUDA" />
       <PerfilRiesgoDialog
         open={abierto}
         onOpenChange={setAbierto}

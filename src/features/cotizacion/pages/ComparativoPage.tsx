@@ -8,6 +8,7 @@ import { Select } from '../../../shared/ui/select';
 import { Skeleton } from '../../../shared/ui/skeleton';
 import { EstadoError, EstadoVacio } from '../../../shared/ui/domain/EstadoVacio';
 import { ErrorToast, WarningToast } from '../../../shared/ui/domain/toasts';
+import { SolicitarAsesoriaDialog } from '../../asesoria-retencion/cliente/SolicitarAsesoriaDialog';
 import { CompararPlanesBar } from '../../planes/components/CompararPlanesBar';
 import { DetallePlanDrawer } from '../../planes/components/DetallePlanDrawer';
 import { useCompararPlanesStore } from '../../planes/store/useCompararPlanesStore';
@@ -37,6 +38,7 @@ export function ComparativoPage() {
   const [compraEnCurso, setCompraEnCurso] = useState(false);
   /** Plan cuyo detalle está abierto (o `null`). */
   const [detalle, setDetalle] = useState<{ planId: string; titulo: string } | null>(null);
+  const [asesoriaAbierta, setAsesoriaAbierta] = useState(false);
   const hayComparacion = useCompararPlanesStore((s) => s.planes.length > 0);
   /** La suma que la persona eligió en la barra única (o `null` si aún no eligió: cada aseguradora usa su punto medio). */
   const [sumaElegida, setSumaElegida] = useState<string | null>(() => (id ? leerSumaElegida(id) : null));
@@ -239,6 +241,7 @@ export function ComparativoPage() {
                       opciones={cotizacion.opciones}
                       actualizando={actualizando}
                       comprada={comprada}
+                      onHablarAsesor={() => setAsesoriaAbierta(true)}
                       onVerDetalle={(pr) => setDetalle({ planId: pr.planId, titulo: `${pr.aseguradora} · ${pr.plan}` })}
                     />
                   ))}
@@ -252,6 +255,7 @@ export function ComparativoPage() {
 
       <DetallePlanDrawer planId={detalle?.planId ?? null} titulo={detalle?.titulo ?? ''} onClose={() => setDetalle(null)} />
       <CompararPlanesBar />
+      <SolicitarAsesoriaDialog open={asesoriaAbierta} onOpenChange={setAsesoriaAbierta} cotizacionId={cotizacion.id} />
     </section>
   );
 }
