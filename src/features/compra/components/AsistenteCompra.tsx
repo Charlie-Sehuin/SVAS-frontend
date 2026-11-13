@@ -9,6 +9,7 @@ import { Button } from '../../../shared/ui/button';
 import { Field } from '../../../shared/ui/field';
 import { Input } from '../../../shared/ui/input';
 import { Skeleton } from '../../../shared/ui/skeleton';
+import { MoneyValue } from '../../../shared/ui/domain/MoneyValue';
 import { EstadoError } from '../../../shared/ui/domain/EstadoVacio';
 import { ErrorToast } from '../../../shared/ui/domain/toasts';
 import {
@@ -428,7 +429,11 @@ function PasoPago({
   // Se renueva solo cuando el intento terminó de forma definitiva (rechazo) o cambió lo que se paga.
   const claveRef = useRef<string | null>(null);
 
-  const total = modo === 'CUOTAS' && pago.CUOTAS ? pago.CUOTAS.total : pago.UNICO.total;
+  // En cuotas solo se cobra HOY la primera (la cuota mensual que devuelve el backend); el resto vence mes a mes.
+  const enCuotas = modo === 'CUOTAS' && pago.CUOTAS ? pago.CUOTAS : null;
+  const etiquetaPagar = enCuotas
+    ? `Pagar mi 1.ª cuota: ${formatearMonto(enCuotas.cuotaMensual)}`
+    : `Pagar ${formatearMonto(pago.UNICO.total)}`;
 
   function cambiarModo(m: ModoPago) {
     setModo(m);
@@ -484,6 +489,13 @@ function PasoPago({
         </div>
       ) : null}
 
+      {enCuotas ? (
+        <p className="mt-4 rounded-lg bg-navy-50 px-3 py-2 text-small text-ink">
+          Hoy pagas solo tu 1.ª cuota de <MoneyValue value={enCuotas.cuotaMensual} />. Las otras {enCuotas.numeroCuotas - 1} cuotas
+          vencen una cada mes. Total del plan de cuotas: <MoneyValue value={enCuotas.total} />.
+        </p>
+      ) : null}
+
       <p className="mt-4 flex items-start gap-2 text-small text-ink-soft">
         <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
         El pago es simulado: no se cobra dinero real.
@@ -496,7 +508,7 @@ function PasoPago({
           </Button>
         ) : null}
         <Button size="lg" className="sm:ml-auto" onClick={pagarAhora} loading={pagar.isPending} loadingText="Procesando tu pago…">
-          {rechazo ? 'Intentar con otro medio' : `Pagar ${formatearMonto(total)}`}
+          {rechazo ? 'Intentar con otro medio' : etiquetaPagar}
         </Button>
       </Acciones>
     </div>

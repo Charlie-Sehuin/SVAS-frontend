@@ -72,7 +72,7 @@ export function MisPolizasPage() {
                     </dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-ink-soft">{p.pago?.modo === 'CUOTAS' ? `Total en ${p.pago.numeroCuotas ?? ''} cuotas` : 'Total pagado'}</dt>
+                    <dt className="text-ink-soft">{p.pago?.modo === 'CUOTAS' ? `Total del plan de ${p.pago.numeroCuotas ?? ''} cuotas` : 'Total pagado'}</dt>
                     <dd>
                       <MoneyValue value={p.pago?.montoTotal ?? p.primaFinal} />
                     </dd>

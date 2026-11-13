@@ -60,9 +60,9 @@ export function SelectorModoPago({ pago, aseguradora, valor, onChange, deshabili
           />
           <CalendarRange className="mt-0.5 size-6 shrink-0 text-navy-700" aria-hidden />
           <span className="flex-1">
-            <span className="block font-bold text-navy-700">{cuotas.numeroCuotas} cuotas</span>
+            <span className="block font-bold text-navy-700">{cuotas.numeroCuotas} cuotas mensuales</span>
             <span className="block text-small text-ink-soft">
-              Total <MoneyValue value={cuotas.total} />
+              Hoy pagas solo la 1.ª cuota. Total en cuotas: <MoneyValue value={cuotas.total} />
             </span>
             {hayRecargo ? (
               <span className="mt-1 block text-small text-ink-soft">

@@ -53,6 +53,9 @@ export function ConfirmacionPage() {
 
   const poliza = compra.poliza;
   const cuotas = compra.pago?.modo === 'CUOTAS' ? compra.pago.cuotas : [];
+  // Solo se muestra lo que el backend marcó como pagado; no se suma nada en el navegador.
+  const primeraPagada = cuotas.find((c) => c.estado === 'CONFIRMADO');
+  const cuotasPendientes = cuotas.filter((c) => c.estado !== 'CONFIRMADO').length;
 
   return (
     <section className="mx-auto max-w-[640px] px-4 py-8 lg:py-12">
@@ -82,10 +85,27 @@ export function ConfirmacionPage() {
               <MoneyValue value={compra.sumaAsegurada} decimales={0} />
             </dd>
           </div>
-          <div className="flex items-baseline justify-between gap-3">
-            <dt className="text-ink-soft">Total pagado</dt>
-            <dd>{compra.pago ? <MoneyValue value={compra.pago.montoTotal} /> : '—'}</dd>
-          </div>
+          {cuotas.length > 0 ? (
+            <>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-ink-soft">Pagado hoy (1.ª cuota)</dt>
+                <dd>{primeraPagada ? <MoneyValue value={primeraPagada.monto} /> : '—'}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-ink-soft">Cuotas por pagar</dt>
+                <dd>{cuotasPendientes}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-ink-soft">Total del plan de cuotas</dt>
+                <dd>{compra.pago ? <MoneyValue value={compra.pago.montoTotal} /> : '—'}</dd>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-ink-soft">Total pagado</dt>
+              <dd>{compra.pago ? <MoneyValue value={compra.pago.montoTotal} /> : '—'}</dd>
+            </div>
+          )}
           {compra.pago ? (
             <div className="flex items-baseline justify-between gap-3">
               <dt className="text-ink-soft">Forma de pago</dt>

@@ -340,7 +340,7 @@ describe('Asistente de compra', () => {
     await llegarAlPago(user);
 
     // El total y la cuota son los del backend, sin cálculo en el navegador.
-    expect(screen.getByText('12 cuotas')).toBeInTheDocument();
+    expect(screen.getByText('12 cuotas mensuales')).toBeInTheDocument();
     expect(screen.getByLabelText('54 dólares con 18 centavos al mes')).toBeInTheDocument();
     expect(screen.getByText('Pagar en cuotas tiene un recargo de 5 % en La Positiva.')).toBeInTheDocument();
 
@@ -358,7 +358,8 @@ describe('Asistente de compra', () => {
     await llegarAlPago(user);
 
     await user.click(screen.getByRole('radio', { name: /12 cuotas/ }));
-    await user.click(screen.getByRole('button', { name: 'Pagar USD 650.16' }));
+    expect(screen.getByText(/Hoy pagas solo tu 1\.ª cuota/)).toHaveTextContent('Las otras 11 cuotas');
+    await user.click(screen.getByRole('button', { name: 'Pagar mi 1.ª cuota: USD 54.18' }));
     expect(await screen.findByText(`destino /compra/${ORDEN}/listo`)).toBeInTheDocument();
     expect(cuerpos.at(-1)).toEqual({ modo: 'CUOTAS', numeroCuotas: 12 });
   });
@@ -479,6 +480,11 @@ describe('ConfirmacionPage', () => {
     expect(screen.getByText('LAP-2026-A1B2C3D4')).toBeInTheDocument();
     expect(screen.getByLabelText('650 dólares con 16 centavos')).toBeInTheDocument();
     expect(screen.getByText('2 cuotas')).toBeInTheDocument();
+    // En cuotas no parece que todo esté pagado: se separa lo pagado hoy del total del plan.
+    expect(screen.getByText('Pagado hoy (1.ª cuota)')).toBeInTheDocument();
+    expect(screen.getByLabelText('325 dólares con 8 centavos')).toBeInTheDocument();
+    expect(screen.getByText('Cuotas por pagar').nextSibling).toHaveTextContent('1');
+    expect(screen.queryByText('Total pagado')).not.toBeInTheDocument();
     expect(screen.getByText('Documento de demostración sin validez legal')).toBeInTheDocument();
 
     expect(screen.queryByRole('list', { name: 'Cronograma de cuotas' })).not.toBeInTheDocument();
@@ -581,7 +587,7 @@ describe('MisPolizasPage', () => {
   it('en cuotas rotula el total con el número de cuotas', async () => {
     server.use(http.get(`${API}/polizas/mias`, () => HttpResponse.json([polizaMock({ pago: { modo: 'CUOTAS', montoTotal: '650.16', numeroCuotas: 12 } })])));
     renderConProviders(<MisPolizasPage />, { roles: ['CLIENTE'], ruta: '/mi-cuenta/polizas' });
-    expect(await screen.findByText('Total en 12 cuotas')).toBeInTheDocument();
+    expect(await screen.findByText('Total del plan de 12 cuotas')).toBeInTheDocument();
     expect(screen.getByLabelText('650 dólares con 16 centavos')).toBeInTheDocument();
   });
 
