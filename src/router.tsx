@@ -66,6 +66,11 @@ const TarifasRangosSumaPage = admin(() => import('./features/administracion/page
 const CompletitudTarifasPage = admin(() => import('./features/administracion/pages/CompletitudTarifasPage'), 'CompletitudTarifasPage');
 const SimuladorTarifaPage = admin(() => import('./features/administracion/pages/SimuladorTarifaPage'), 'SimuladorTarifaPage');
 
+const PruebaChoqueEscenariosPage = admin(() => import('./features/administracion/pages/PruebaChoqueEscenariosPage'), 'PruebaChoqueEscenariosPage');
+const PruebaChoqueCoberturasPage = admin(() => import('./features/administracion/pages/PruebaChoqueCoberturasPage'), 'PruebaChoqueCoberturasPage');
+const PruebaChoqueFrecuenciasPage = admin(() => import('./features/administracion/pages/PruebaChoqueFrecuenciasPage'), 'PruebaChoqueFrecuenciasPage');
+const PruebaChoqueFactoresPage = admin(() => import('./features/administracion/pages/PruebaChoqueFactoresPage'), 'PruebaChoqueFactoresPage');
+
 function Cargando() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-6" aria-busy>
@@ -165,10 +170,10 @@ export const router = createBrowserRouter([
               { path: 'admin/coberturas', element: pendiente('Catálogo de coberturas', 2) },
               { path: 'admin/contenido/completitud', element: pendiente('Completitud del contenido de planes', 2) },
 
-              { path: 'admin/prueba-choque/escenarios', element: pendiente('Escenarios de la Prueba de Choque', 2) },
-              { path: 'admin/prueba-choque/coberturas', element: pendiente('Deducibles y topes por plan', 2) },
-              { path: 'admin/prueba-choque/frecuencias', element: pendiente('Frecuencias y zonas', 2) },
-              { path: 'admin/prueba-choque/factores', element: pendiente('Factores de perfil', 2) },
+              { path: 'admin/prueba-choque/escenarios', element: lazyPage(<PruebaChoqueEscenariosPage />) },
+              { path: 'admin/prueba-choque/coberturas', element: lazyPage(<PruebaChoqueCoberturasPage />) },
+              { path: 'admin/prueba-choque/frecuencias', element: lazyPage(<PruebaChoqueFrecuenciasPage />) },
+              { path: 'admin/prueba-choque/factores', element: lazyPage(<PruebaChoqueFactoresPage />) },
             ],
           },
           { path: '*', element: <NotFoundPage /> },

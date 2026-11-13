@@ -57,7 +57,8 @@ function renderWizard() {
 }
 
 async function completarPaso1(user: Usuario, extra?: { placa?: string; clase?: string }) {
-  await screen.findByRole('option', { name: 'Toyota' });
+  // La primera pantalla del archivo carga sus módulos en frío y, con toda la suite en paralelo, puede pasar del segundo por defecto.
+  await screen.findByRole('option', { name: 'Toyota' }, { timeout: 5000 });
   await user.selectOptions(screen.getByLabelText(/^marca/i), 'm1');
   await screen.findByRole('option', { name: 'Corolla' });
   await user.selectOptions(screen.getByLabelText(/^modelo/i), 'mo1');
