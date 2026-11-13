@@ -26,6 +26,12 @@ const ColaAsesoriaPage = lazy(() =>
 const CasoDetallePage = lazy(() =>
   import('./features/asesoria-retencion/asesor/pages/CasoDetallePage').then((m) => ({ default: m.CasoDetallePage })),
 );
+const SeguimientosPage = lazy(() =>
+  import('./features/asesoria-retencion/asesor/pages/SeguimientosPage').then((m) => ({ default: m.SeguimientosPage })),
+);
+const SeguimientoDetallePage = lazy(() =>
+  import('./features/asesoria-retencion/asesor/pages/SeguimientoDetallePage').then((m) => ({ default: m.SeguimientoDetallePage })),
+);
 const RetomaPage = lazy(() =>
   import('./features/asesoria-retencion/retoma/RetomaPage').then((m) => ({ default: m.RetomaPage })),
 );
@@ -125,8 +131,8 @@ export const router = createBrowserRouter([
           /* ASESOR (ADMIN lectura) */
           { path: 'asesorias', element: lazyPage(<ColaAsesoriaPage />) },
           { path: 'asesorias/:id', element: lazyPage(<CasoDetallePage />) },
-          { path: 'seguimientos', element: pendiente('Seguimientos', 2) },
-          { path: 'seguimientos/:id', element: pendiente('Seguimiento', 2) },
+          { path: 'seguimientos', element: lazyPage(<SeguimientosPage />) },
+          { path: 'seguimientos/:id', element: lazyPage(<SeguimientoDetallePage />) },
 
           /* Reportes: ASESOR (propio), ADMIN (todos) */
           { path: 'reportes/mi-desempeno', element: pendiente('Mi desempeño', 4) },

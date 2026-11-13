@@ -72,3 +72,55 @@ export function useCerrarSolicitud(id: string) {
     onSuccess: refrescar,
   });
 }
+
+/* ───────────── Seguimientos (CU-04) ───────────── */
+
+/** Lista de seguimientos; sin estado, los que siguen abiertos (`EN_SEGUIMIENTO`). */
+export const useSeguimientos = (estado?: Parameters<typeof api.listarSeguimientos>[0]) =>
+  useQuery({
+    queryKey: qk.seguimientos.lista({ estado }),
+    queryFn: () => api.listarSeguimientos(estado),
+    staleTime: STALE.colas,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+  });
+
+export const useSeguimientoDetalle = (id: string | undefined) =>
+  useQuery({
+    queryKey: qk.seguimientos.detalle(id ?? ''),
+    queryFn: () => api.obtenerSeguimiento(id!),
+    enabled: !!id,
+    staleTime: STALE.colas,
+  });
+
+function useRefrescarSeguimiento(id: string) {
+  const qc = useQueryClient();
+  return () => {
+    void qc.invalidateQueries({ queryKey: qk.seguimientos.detalle(id) });
+    void qc.invalidateQueries({ queryKey: ['seguimientos', 'lista'] });
+  };
+}
+
+/** `POST /seguimientos/:id/intentos`. Al llegar al máximo sin aceptación, el backend cierra el seguimiento solo. */
+export function useRegistrarIntento(id: string) {
+  const refrescar = useRefrescarSeguimiento(id);
+  return useMutation({
+    mutationFn: (body: Parameters<typeof api.registrarIntento>[1]) => api.registrarIntento(id, body),
+    onSuccess: refrescar,
+  });
+}
+
+/** `POST /seguimientos/:id/aceptacion`: el cliente aceptó por teléfono; se le reenvía el enlace de compra. */
+export function useRegistrarAceptacion(id: string) {
+  const refrescar = useRefrescarSeguimiento(id);
+  return useMutation({ mutationFn: () => api.registrarAceptacion(id), onSuccess: refrescar });
+}
+
+/** `POST /seguimientos/:id/cierre`. Descartar exige motivo (RN-11). */
+export function useCerrarSeguimiento(id: string) {
+  const refrescar = useRefrescarSeguimiento(id);
+  return useMutation({
+    mutationFn: (body: Parameters<typeof api.cerrarSeguimiento>[1]) => api.cerrarSeguimiento(id, body),
+    onSuccess: refrescar,
+  });
+}

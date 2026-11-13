@@ -1,4 +1,4 @@
-import type { CanalContacto, MotivoAsesoria, OrigenCaso } from '../../../shared/types/enums';
+import type { CanalContacto, MotivoAsesoria, MotivoCierre, OrigenCaso, ResultadoIntento } from '../../../shared/types/enums';
 
 /** Textos en lenguaje llano para el backoffice del asesor. */
 export const TEXTO_MOTIVO: Record<MotivoAsesoria, string> = {
@@ -20,3 +20,18 @@ export const HORAS_ESPERA_LARGA = 4;
 export function esperaLarga(fechaIso: string, ahora: Date = new Date()): boolean {
   return ahora.getTime() - new Date(fechaIso).getTime() > HORAS_ESPERA_LARGA * 3_600_000;
 }
+
+export const TEXTO_RESULTADO_INTENTO: Record<ResultadoIntento, string> = {
+  CONTACTADO: 'Contactado',
+  NO_RESPONDE: 'No respondió',
+  RECHAZA: 'Rechazó',
+  ACEPTA: 'Aceptó',
+};
+
+export const TEXTO_MOTIVO_CIERRE: Record<MotivoCierre, string> = {
+  PRECIO: 'Precio',
+  YA_CONTRATO: 'Ya contrató otro seguro',
+  NO_RESPONDE: 'No responde',
+  SIN_INTERES: 'Sin interés',
+  OTRO: 'Otro',
+};
