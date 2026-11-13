@@ -20,6 +20,9 @@ const LoginPage = lazy(() => import('./auth/LoginPage').then((m) => ({ default: 
 const CotizarPage = lazy(() => import('./features/cotizacion/pages/CotizarPage').then((m) => ({ default: m.CotizarPage })));
 const ComparativoPage = lazy(() => import('./features/cotizacion/pages/ComparativoPage').then((m) => ({ default: m.ComparativoPage })));
 const CompraPage = lazy(() => import('./features/compra/pages/CompraPage').then((m) => ({ default: m.CompraPage })));
+const CompararPlanesPage = lazy(() =>
+  import('./features/planes/pages/CompararPlanesPage').then((m) => ({ default: m.CompararPlanesPage })),
+);
 const PruebaChoquePage = lazy(() =>
   import('./features/prueba-choque/pages/PruebaChoquePage').then((m) => ({ default: m.PruebaChoquePage })),
 );
@@ -76,7 +79,7 @@ export const router = createBrowserRouter([
       { path: '/cotizar', element: lazyPage(<CotizarPage />) },
       { path: '/cotizacion/:id', element: lazyPage(<ComparativoPage />) },
       { path: '/cotizacion/:id/prueba', element: lazyPage(<PruebaChoquePage />) },
-      { path: '/comparar', element: pendiente('Comparar planes', 2) },
+      { path: '/comparar', element: lazyPage(<CompararPlanesPage />) },
       { path: '/retoma/:token', element: pendiente('Retomar mi cotización', 2) },
       // La compra es pública a propósito: un cliente NUEVO no tiene cuenta y se la crea aquí mismo, sin salir del
       // embudo (doc de arquitectura §6.2: "CLIENTE, registro en el paso 1"). La pantalla decide qué mostrar según la sesión.

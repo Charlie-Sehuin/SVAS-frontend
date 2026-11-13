@@ -7,6 +7,7 @@ import type { OpcionCotizacion } from '../../../shared/types/enums';
 import { Button } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
 import { Skeleton } from '../../../shared/ui/skeleton';
+import { MAXIMO_COMPARAR, useCompararPlanesStore } from '../../planes/store/useCompararPlanesStore';
 import { MoneyValue } from '../../../shared/ui/domain/MoneyValue';
 
 interface PlanCardProps {
@@ -18,6 +19,8 @@ interface PlanCardProps {
   actualizando?: boolean;
   /** La cotización ya se convirtió en póliza: no se ofrece comprar. */
   comprada?: boolean;
+  /** Abre el detalle del plan (qué cubre, qué no, requisitos). Sin él no hay botón. */
+  onVerDetalle?: (prima: PrimaCotizada) => void;
 }
 
 /**
@@ -25,7 +28,13 @@ interface PlanCardProps {
  * asegurada van debajo. Todos los montos llegan del backend como string y solo se formatean.
  * "Ver detalle" y "Comparar" llegan con el contenido de los planes (Ola 2).
  */
-export function PlanCard({ prima, cotizacionId, opciones, actualizando = false, comprada = false }: PlanCardProps) {
+export function PlanCard({ prima, cotizacionId, opciones, actualizando = false, comprada = false, onVerDetalle }: PlanCardProps) {
+  const seleccionados = useCompararPlanesStore((s) => s.planes);
+  const alternarComparar = useCompararPlanesStore((s) => s.alternar);
+  const marcado = seleccionados.some((p) => p.planId === prima.planId);
+  const llenoDeComparar = !marcado && seleccionados.length >= MAXIMO_COMPARAR;
+  // Sin `resumen` el plan aún no tiene contenido publicado (el backend respondería 404): no se ofrece ver ni comparar.
+  const hayContenido = prima.resumen !== null;
   const puedeComprar = opciones.includes('COMPRA_INMEDIATA') && !comprada;
   const puedeAsesor = opciones.includes('ASESORIA') && !comprada;
 
@@ -54,6 +63,30 @@ export function PlanCard({ prima, cotizacionId, opciones, actualizando = false, 
           </div>
         )}
       </div>
+
+      {hayContenido ? (
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {onVerDetalle ? (
+            <Button variant="outlineNavy" size="sm" onClick={() => onVerDetalle(prima)}>
+              Ver detalle
+            </Button>
+          ) : null}
+          <label className={cn('flex min-h-11 items-center gap-2 text-small', llenoDeComparar ? 'cursor-not-allowed text-ink-soft' : 'cursor-pointer text-navy-700')}>
+            <input
+              type="checkbox"
+              checked={marcado}
+              disabled={llenoDeComparar}
+              onChange={() => alternarComparar({ planId: prima.planId, etiqueta: `${prima.aseguradora} · ${prima.plan}` })}
+              className="size-5 accent-brand-500"
+            />
+            <span>
+              Comparar
+              <span className="sr-only"> el plan {prima.plan} de {prima.aseguradora}</span>
+              {llenoDeComparar ? <span className="block text-caption">Máximo {MAXIMO_COMPARAR} planes</span> : null}
+            </span>
+          </label>
+        </div>
+      ) : null}
 
       {puedeComprar || puedeAsesor ? (
         <div className={cn('mt-5 flex flex-col gap-2')}>

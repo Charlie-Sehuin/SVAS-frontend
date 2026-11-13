@@ -8,6 +8,9 @@ import { Select } from '../../../shared/ui/select';
 import { Skeleton } from '../../../shared/ui/skeleton';
 import { EstadoError, EstadoVacio } from '../../../shared/ui/domain/EstadoVacio';
 import { ErrorToast, WarningToast } from '../../../shared/ui/domain/toasts';
+import { CompararPlanesBar } from '../../planes/components/CompararPlanesBar';
+import { DetallePlanDrawer } from '../../planes/components/DetallePlanDrawer';
+import { useCompararPlanesStore } from '../../planes/store/useCompararPlanesStore';
 import { DerivacionBanner } from '../components/DerivacionBanner';
 import { PlanCard, PlanNoDisponible } from '../components/PlanCard';
 import { SumaAseguradaControl } from '../components/SumaAseguradaControl';
@@ -32,6 +35,9 @@ export function ComparativoPage() {
   /** Aseguradoras con un recálculo en curso (su monto se reemplaza por un esqueleto). */
   const [pendientes, setPendientes] = useState<ReadonlySet<string>>(new Set());
   const [compraEnCurso, setCompraEnCurso] = useState(false);
+  /** Plan cuyo detalle está abierto (o `null`). */
+  const [detalle, setDetalle] = useState<{ planId: string; titulo: string } | null>(null);
+  const hayComparacion = useCompararPlanesStore((s) => s.planes.length > 0);
   /** La suma que la persona eligió en la barra única (o `null` si aún no eligió: cada aseguradora usa su punto medio). */
   const [sumaElegida, setSumaElegida] = useState<string | null>(() => (id ? leerSumaElegida(id) : null));
 
@@ -108,7 +114,7 @@ export function ComparativoPage() {
   const hayDerivacion = cotizacion.motivoDerivacion !== null || !cotizacion.opciones.includes('COMPRA_INMEDIATA');
 
   return (
-    <section className="mx-auto max-w-[1200px] px-4 py-6 lg:px-6 lg:py-10">
+    <section className={`mx-auto max-w-[1200px] px-4 py-6 lg:px-6 lg:py-10 ${hayComparacion ? 'pb-32' : ''}`}>
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-h1 text-navy-700">
@@ -233,6 +239,7 @@ export function ComparativoPage() {
                       opciones={cotizacion.opciones}
                       actualizando={actualizando}
                       comprada={comprada}
+                      onVerDetalle={(pr) => setDetalle({ planId: pr.planId, titulo: `${pr.aseguradora} · ${pr.plan}` })}
                     />
                   ))}
                   {g.noDisponibles.length > 0 ? <PlanNoDisponible aseguradora={g.aseguradora} /> : null}
@@ -242,6 +249,9 @@ export function ComparativoPage() {
           })}
         </div>
       )}
+
+      <DetallePlanDrawer planId={detalle?.planId ?? null} titulo={detalle?.titulo ?? ''} onClose={() => setDetalle(null)} />
+      <CompararPlanesBar />
     </section>
   );
 }
