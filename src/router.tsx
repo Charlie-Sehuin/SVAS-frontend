@@ -20,6 +20,12 @@ const LoginPage = lazy(() => import('./auth/LoginPage').then((m) => ({ default: 
 const CotizarPage = lazy(() => import('./features/cotizacion/pages/CotizarPage').then((m) => ({ default: m.CotizarPage })));
 const ComparativoPage = lazy(() => import('./features/cotizacion/pages/ComparativoPage').then((m) => ({ default: m.ComparativoPage })));
 const CompraPage = lazy(() => import('./features/compra/pages/CompraPage').then((m) => ({ default: m.CompraPage })));
+const ColaAsesoriaPage = lazy(() =>
+  import('./features/asesoria-retencion/asesor/pages/ColaAsesoriaPage').then((m) => ({ default: m.ColaAsesoriaPage })),
+);
+const CasoDetallePage = lazy(() =>
+  import('./features/asesoria-retencion/asesor/pages/CasoDetallePage').then((m) => ({ default: m.CasoDetallePage })),
+);
 const RetomaPage = lazy(() =>
   import('./features/asesoria-retencion/retoma/RetomaPage').then((m) => ({ default: m.RetomaPage })),
 );
@@ -117,8 +123,8 @@ export const router = createBrowserRouter([
           { path: 'buscar', element: pendiente('Búsqueda', 2) },
 
           /* ASESOR (ADMIN lectura) */
-          { path: 'asesorias', element: pendiente('Cola de asesoría', 2) },
-          { path: 'asesorias/:id', element: pendiente('Caso', 2) },
+          { path: 'asesorias', element: lazyPage(<ColaAsesoriaPage />) },
+          { path: 'asesorias/:id', element: lazyPage(<CasoDetallePage />) },
           { path: 'seguimientos', element: pendiente('Seguimientos', 2) },
           { path: 'seguimientos/:id', element: pendiente('Seguimiento', 2) },
 

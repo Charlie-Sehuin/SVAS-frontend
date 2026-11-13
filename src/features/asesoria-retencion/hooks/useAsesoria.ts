@@ -24,3 +24,51 @@ export const useColaAsesoria = (filtros: { estado?: Parameters<typeof api.listar
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
   });
+
+/** Detalle de una solicitud (cliente, primas, descuentos y el tope vigente). */
+export const useSolicitudDetalle = (id: string | undefined) =>
+  useQuery({
+    queryKey: qk.asesorias.detalle(id ?? ''),
+    queryFn: () => api.obtenerSolicitud(id!),
+    enabled: !!id,
+    staleTime: STALE.colas,
+  });
+
+/** El caso se actualiza en la lista y en el detalle después de cualquier acción del asesor. */
+function useRefrescarCaso(id: string) {
+  const qc = useQueryClient();
+  return () => {
+    void qc.invalidateQueries({ queryKey: qk.asesorias.detalle(id) });
+    void qc.invalidateQueries({ queryKey: ['asesorias', 'cola'] });
+  };
+}
+
+/** `POST /asesorias/:id/tomar`. Si otro asesor la tomó antes, el backend responde 409 y la cola se refresca. */
+export function useTomarSolicitud() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.tomarSolicitud(id),
+    onSettled: (_r, _e, id) => {
+      void qc.invalidateQueries({ queryKey: ['asesorias', 'cola'] });
+      void qc.invalidateQueries({ queryKey: qk.asesorias.detalle(id) });
+    },
+  });
+}
+
+/** `POST /asesorias/:id/descuentos`. El tope (RN-07) y la no acumulación (RN-09) los valida el backend. */
+export function useAplicarDescuento(id: string) {
+  const refrescar = useRefrescarCaso(id);
+  return useMutation({
+    mutationFn: (body: Parameters<typeof api.aplicarDescuento>[1]) => api.aplicarDescuento(id, body),
+    onSuccess: refrescar,
+  });
+}
+
+/** `POST /asesorias/:id/resultado`: cierra el caso con su resultado y si el cliente aceptó. */
+export function useCerrarSolicitud(id: string) {
+  const refrescar = useRefrescarCaso(id);
+  return useMutation({
+    mutationFn: (body: Parameters<typeof api.cerrarSolicitud>[1]) => api.cerrarSolicitud(id, body),
+    onSuccess: refrescar,
+  });
+}
