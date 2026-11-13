@@ -32,7 +32,7 @@ export const BORRADOR_VACIO: BorradorCotizar = {
   sinPlaca: false,
   clase: '',
   ubicacion: { departamento: '', provincia: '', ubigeo: '' },
-  contacto: { nombres: '', apellidos: '', telefono: '', email: '', canal: '', acepta: false },
+  contacto: { nombres: '', apellidos: '', telefono: '', email: '', canal: 'WHATSAPP', acepta: false },
 };
 
 interface WizardState {

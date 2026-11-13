@@ -85,11 +85,23 @@ async function completarPaso3(user: Usuario) {
   await user.type(screen.getByLabelText(/^apellidos/i), 'Ríos');
   await user.type(screen.getByLabelText(/^celular/i), '987 654 321');
   await user.type(screen.getByLabelText(/^correo electrónico/i), 'Ana@Example.com');
-  await user.click(screen.getByLabelText(/whatsapp/i));
   await user.click(screen.getByRole('checkbox', { name: /he leído y acepto/i }));
 }
 
 describe('Asistente de cotizar', () => {
+  it('trae WhatsApp preseleccionado como canal de contacto y se puede cambiar a Llamada', async () => {
+    catalogoGeografico();
+    const user = userEvent.setup();
+    renderWizard();
+    await completarPaso1(user);
+    await completarPaso2(user);
+    await screen.findByRole('heading', { name: '¿Dónde te enviamos tus cotizaciones?' });
+    expect(screen.getByLabelText(/whatsapp/i)).toBeChecked();
+    await user.click(screen.getByLabelText(/llamada/i));
+    expect(screen.getByLabelText(/llamada/i)).toBeChecked();
+    expect(screen.getByLabelText(/whatsapp/i)).not.toBeChecked();
+  });
+
   it('valida cada paso antes de avanzar y dice qué aseguradoras piden el distrito (RF-03)', async () => {
     catalogoGeografico();
     const user = userEvent.setup();
