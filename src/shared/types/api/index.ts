@@ -9,3 +9,4 @@ export * from './planes.types';
 export * from './asesoria.types';
 export * from './pruebaChoqueAdmin.types';
 export * from './contenidoAdmin.types';
+export * from './reportes.types';

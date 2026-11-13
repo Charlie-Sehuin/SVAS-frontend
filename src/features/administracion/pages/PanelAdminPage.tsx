@@ -11,14 +11,23 @@ import { obtenerPanel } from '../api/admin.api';
 
 /**
  * Inicio del ADMINISTRADOR con los contadores del catálogo y los últimos cambios (`GET /admin/panel`).
- * Es provisional: el dashboard por rol con KPI de ventas llega en la Ola 4 y lo reemplaza.
+ * El dashboard del administrador (`/app`) lo incluye como una sección; esta pantalla suelta sigue disponible.
  */
 export function PanelAdminPage() {
+  return (
+    <>
+      <PageHeader titulo="Panel" descripcion="Estado del catálogo y últimos cambios registrados." />
+      <PanelAdminContenido />
+    </>
+  );
+}
+
+/** Los contadores del catálogo y los últimos cambios, sin título: el dashboard del administrador los muestra como una sección más. */
+export function PanelAdminContenido() {
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: qk.admin.panel, queryFn: obtenerPanel, staleTime: 30_000 });
 
   return (
     <>
-      <PageHeader titulo="Panel" descripcion="Estado del catálogo y últimos cambios registrados." />
       {isError ? (
         <EstadoError error={error} onRetry={() => void refetch()} />
       ) : isLoading || !data ? (

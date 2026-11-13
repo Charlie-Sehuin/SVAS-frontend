@@ -4,7 +4,6 @@ import { PublicLayout } from './app-shell/PublicLayout';
 import { PantallaPendiente } from './app-shell/PantallaPendiente';
 import { NotFoundPage } from './app-shell/NotFoundPage';
 import { RoleGuard } from './auth/RoleGuard';
-import { useAuth } from './auth/useAuth';
 import { Skeleton } from './shared/ui/skeleton';
 
 /**
@@ -53,7 +52,6 @@ const BackofficeLayout = lazy(() => import('./app-shell/BackofficeLayout').then(
 /* Ola 0 · administración. Cada pantalla en su propio chunk: el embudo del cliente no las descarga. */
 const admin = <K extends string>(cargar: () => Promise<Record<K, ComponentType>>, nombre: K) =>
   lazy(() => cargar().then((m) => ({ default: m[nombre] })));
-const PanelAdminPage = admin(() => import('./features/administracion/pages/PanelAdminPage'), 'PanelAdminPage');
 const UsuariosPage = admin(() => import('./features/administracion/pages/UsuariosPage'), 'UsuariosPage');
 const AseguradorasPlanesPage = admin(() => import('./features/administracion/pages/AseguradorasPlanesPage'), 'AseguradorasPlanesPage');
 const CamposRequeridosPage = admin(() => import('./features/administracion/pages/CamposRequeridosPage'), 'CamposRequeridosPage');
@@ -75,6 +73,16 @@ const ContenidoPlanPage = admin(() => import('./features/administracion/pages/Co
 const CoberturasCatalogoPage = admin(() => import('./features/administracion/pages/CoberturasCatalogoPage'), 'CoberturasCatalogoPage');
 const CompletitudContenidoPage = admin(() => import('./features/administracion/pages/CompletitudContenidoPage'), 'CompletitudContenidoPage');
 
+/* Ola 4 · dashboard y reportes. Cada pantalla en su propio chunk. */
+const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const ReporteVentasPage = lazy(() => import('./features/reportes/pages/ReporteVentasPage').then((m) => ({ default: m.ReporteVentasPage })));
+const ReporteRetencionPage = lazy(() => import('./features/reportes/pages/ReporteRetencionPage').then((m) => ({ default: m.ReporteRetencionPage })));
+const ReporteDescuentosPage = lazy(() => import('./features/reportes/pages/ReporteDescuentosPage').then((m) => ({ default: m.ReporteDescuentosPage })));
+const ReporteImpactoPruebaChoquePage = lazy(() =>
+  import('./features/reportes/pages/ReporteImpactoPruebaChoquePage').then((m) => ({ default: m.ReporteImpactoPruebaChoquePage })),
+);
+const MiDesempenoPage = lazy(() => import('./features/reportes/pages/MiDesempenoPage').then((m) => ({ default: m.MiDesempenoPage })));
+
 function Cargando() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-6" aria-busy>
@@ -86,11 +94,6 @@ function Cargando() {
 
 const lazyPage = (node: ReactNode) => <Suspense fallback={<Cargando />}>{node}</Suspense>;
 
-/** `/app`: el administrador ve su panel; el asesor, el dashboard (Ola 4) aún pendiente. */
-function InicioBackoffice() {
-  const { roles } = useAuth();
-  return roles.includes('ADMINISTRADOR') ? lazyPage(<PanelAdminPage />) : <PantallaPendiente titulo="Dashboard" ola={4} />;
-}
 const pendiente = (titulo: string, ola: 0 | 1 | 2 | 3 | 4) => <PantallaPendiente titulo={titulo} ola={ola} />;
 
 export const router = createBrowserRouter([
@@ -134,7 +137,7 @@ export const router = createBrowserRouter([
       {
         element: lazyPage(<BackofficeLayout />),
         children: [
-          { index: true, element: <InicioBackoffice /> },
+          { index: true, element: lazyPage(<DashboardPage />) },
           { path: 'buscar', element: pendiente('Búsqueda', 2) },
 
           /* ASESOR (ADMIN lectura) */
@@ -144,16 +147,16 @@ export const router = createBrowserRouter([
           { path: 'seguimientos/:id', element: lazyPage(<SeguimientoDetallePage />) },
 
           /* Reportes: ASESOR (propio), ADMIN (todos) */
-          { path: 'reportes/mi-desempeno', element: pendiente('Mi desempeño', 4) },
+          { path: 'reportes/mi-desempeno', element: lazyPage(<MiDesempenoPage />) },
 
           /* Solo ADMINISTRADOR */
           {
             element: <RoleGuard roles={['ADMINISTRADOR']} />,
             children: [
-              { path: 'reportes/ventas', element: pendiente('Reporte de ventas', 4) },
-              { path: 'reportes/retencion', element: pendiente('Reporte de retención', 4) },
-              { path: 'reportes/descuentos', element: pendiente('Reporte de descuentos', 4) },
-              { path: 'reportes/prueba-choque', element: pendiente('Impacto de la Prueba de Choque', 4) },
+              { path: 'reportes/ventas', element: lazyPage(<ReporteVentasPage />) },
+              { path: 'reportes/retencion', element: lazyPage(<ReporteRetencionPage />) },
+              { path: 'reportes/descuentos', element: lazyPage(<ReporteDescuentosPage />) },
+              { path: 'reportes/prueba-choque', element: lazyPage(<ReporteImpactoPruebaChoquePage />) },
 
               { path: 'admin', element: <Navigate to="/app/admin/aseguradoras" replace /> },
               { path: 'admin/aseguradoras', element: lazyPage(<AseguradorasPlanesPage />) },
