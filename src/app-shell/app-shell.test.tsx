@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { renderConProviders } from '../test/render';
 import { RoleGuard } from '../auth/RoleGuard';
 import { BackofficeLayout } from './BackofficeLayout';
-import { PublicLayout, pasoDelEmbudo } from './PublicLayout';
+import { cotizacionDeLaRuta, PublicLayout, pasoDelEmbudo } from './PublicLayout';
 
 describe('app shell', () => {
   it('el stepper deduce el paso desde la ruta', () => {
@@ -12,6 +13,33 @@ describe('app shell', () => {
     expect(pasoDelEmbudo('/cotizar')).toBe(1);
     expect(pasoDelEmbudo('/cotizacion/abc')).toBe(2);
     expect(pasoDelEmbudo('/compra/abc')).toBe(3);
+  });
+
+  it('detecta la cotización de la ruta (comparativo, prueba y compra) y no la orden de la confirmación', () => {
+    const id = '7f1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b';
+    expect(cotizacionDeLaRuta(`/cotizacion/${id}`)).toBe(id);
+    expect(cotizacionDeLaRuta(`/cotizacion/${id}/prueba`)).toBe(id);
+    expect(cotizacionDeLaRuta(`/compra/${id}`)).toBe(id);
+    expect(cotizacionDeLaRuta(`/compra/${id}/listo`)).toBeNull(); // ahí el id es el de la orden
+    expect(cotizacionDeLaRuta('/cotizar')).toBeNull();
+    expect(cotizacionDeLaRuta('/cotizacion/abc')).toBeNull();
+  });
+
+  it('con una cotización a la vista, "Hablar con un asesor" de la barra abre la solicitud en vez de un enlace telefónico', async () => {
+    const id = '7f1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b';
+    const user = userEvent.setup();
+    renderConProviders(
+      <Routes>
+        <Route element={<PublicLayout />}>
+          <Route path="/cotizacion/:id" element={<p>contenido</p>} />
+        </Route>
+      </Routes>,
+      { roles: ['CLIENTE'], ruta: `/cotizacion/${id}` },
+    );
+    expect(screen.queryByRole('link', { name: /hablar con un asesor/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /hablar con un asesor/i }));
+    const dialogo = await screen.findByRole('dialog', { name: /hablar con un asesor/i });
+    expect(within(dialogo).getByRole('radio', { name: /tengo una duda/i })).toBeChecked();
   });
 
   it('PublicLayout muestra "Hablar con un asesor" en el embudo y la leyenda de demostración', () => {

@@ -29,6 +29,17 @@ const CambiarPasswordDialog = lazy(() =>
   import('../auth/CambiarPasswordDialog').then((m) => ({ default: m.CambiarPasswordDialog })),
 );
 
+/** Mismo motivo que el de cambiar contraseña: trae el registro (zod + react-hook-form); solo se descarga al pulsar. */
+const SolicitarAsesoriaDialog = lazy(() =>
+  import('../features/asesoria-retencion/cliente/SolicitarAsesoriaDialog').then((m) => ({ default: m.SolicitarAsesoriaDialog })),
+);
+
+/** Cotización de la pantalla actual (comparativo, Prueba de Choque o compra), para pedir asesoría sobre ella. */
+export function cotizacionDeLaRuta(pathname: string): string | null {
+  const m = /^\/(?:cotizacion|compra)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\/prueba)?\/?$/i.exec(pathname);
+  return m?.[1] ?? null;
+}
+
 /**
  * Layout del embudo (arquitectura §6.3, diseño §7.6): en la landing, header
  * blanco con el logo completo; en cotizar / comparar / comprar, barra
@@ -43,7 +54,7 @@ export function PublicLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-canvas">
-      {esLanding ? <HeaderLanding /> : <HeaderEmbudo paso={paso} />}
+      {esLanding ? <HeaderLanding /> : <HeaderEmbudo paso={paso} cotizacionId={cotizacionDeLaRuta(pathname)} />}
       <WakeUpBanner />
       <main className="flex-1">
         <Outlet />
@@ -125,7 +136,15 @@ function HeaderLanding() {
   );
 }
 
-function HeaderEmbudo({ paso }: { paso: PasoEmbudo }) {
+function HeaderEmbudo({ paso, cotizacionId }: { paso: PasoEmbudo; cotizacionId: string | null }) {
+  const [asesoriaAbierta, setAsesoriaAbierta] = useState(false);
+  const claseBoton = 'ml-auto shrink-0 border-white bg-transparent text-white hover:bg-white/10 focus-visible:outline-white';
+  const contenido = (
+    <>
+      <Headset aria-hidden /> <span className="hidden sm:inline">Hablar con un asesor</span>
+      <span className="sm:hidden">Asesor</span>
+    </>
+  );
   return (
     <header className="sticky top-0 z-20 bg-navy-800 text-white shadow-card">
       <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-4 px-4 lg:px-6">
@@ -133,14 +152,24 @@ function HeaderEmbudo({ paso }: { paso: PasoEmbudo }) {
           <LogoS />
         </Link>
         <Stepper paso={paso} />
-        <Button variant="secondary" size="sm" className="ml-auto shrink-0 border-white bg-transparent text-white hover:bg-white/10 focus-visible:outline-white" asChild>
-          <a href={TELEFONO_HREF}>
-            <Headset aria-hidden /> <span className="hidden sm:inline">Hablar con un asesor</span>
-            <span className="sm:hidden">Asesor</span>
-          </a>
-        </Button>
+        {cotizacionId ? (
+          // Con una cotización a la vista se abre la solicitud de asesoría (queda en la cola del asesor).
+          <Button variant="secondary" size="sm" className={claseBoton} onClick={() => setAsesoriaAbierta(true)}>
+            {contenido}
+          </Button>
+        ) : (
+          // Sin cotización (p. ej. al empezar a cotizar) no hay sobre qué pedir asesoría: se ofrece llamar.
+          <Button variant="secondary" size="sm" className={claseBoton} asChild>
+            <a href={TELEFONO_HREF}>{contenido}</a>
+          </Button>
+        )}
         <MenuCuenta variante="oscuro" />
       </div>
+      {asesoriaAbierta && cotizacionId ? (
+        <Suspense fallback={null}>
+          <SolicitarAsesoriaDialog open onOpenChange={setAsesoriaAbierta} cotizacionId={cotizacionId} />
+        </Suspense>
+      ) : null}
       {paso > 0 ? (
         <div className="h-1 w-full bg-white/15 md:hidden" aria-hidden>
           <div className="h-full bg-brand-500 transition-[width] duration-200" style={{ width: `${(paso / 3) * 100}%` }} />
