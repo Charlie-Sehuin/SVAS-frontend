@@ -16,6 +16,7 @@ import { DerivacionBanner } from '../components/DerivacionBanner';
 import { PlanCard, PlanNoDisponible } from '../components/PlanCard';
 import { SumaAseguradaControl } from '../components/SumaAseguradaControl';
 import { useActualizarSuma, useResumenCotizacion } from '../hooks/useCotizacion';
+import { useCotizarWizardStore } from '../store/useCotizarWizardStore';
 import { agruparPorAseguradora, aseguradorasDe, limitarARango, mismoMonto, rangoUnion, type OrdenComparativo } from '../lib/agrupar';
 import { guardarSumaElegida, leerSumaElegida } from '../lib/sumaElegida';
 
@@ -40,6 +41,8 @@ export function ComparativoPage() {
   const [detalle, setDetalle] = useState<{ planId: string; titulo: string } | null>(null);
   const [asesoriaAbierta, setAsesoriaAbierta] = useState(false);
   const hayComparacion = useCompararPlanesStore((s) => s.planes.length > 0);
+  /** Solo si el borrador del formulario sigue siendo el de esta cotización se puede volver a corregirlo. */
+  const puedeEditar = useCotizarWizardStore((s) => !!id && s.ultimaCotizacionId === id);
   /** La suma que la persona eligió en la barra única (o `null` si aún no eligió: cada aseguradora usa su punto medio). */
   const [sumaElegida, setSumaElegida] = useState<string | null>(() => (id ? leerSumaElegida(id) : null));
 
@@ -132,9 +135,18 @@ export function ComparativoPage() {
             <span>Elige tu plan y ajusta la suma asegurada de cada aseguradora.</span>
           </p>
         </div>
-        <Button variant="outlineNavy" asChild>
-          <Link to="/cotizar">Cotizar otro vehículo</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {puedeEditar && !comprada ? (
+            <Button variant="ghost" asChild>
+              <Link to="/cotizar" state={{ editar: true }}>
+                Editar mis datos
+              </Link>
+            </Button>
+          ) : null}
+          <Button variant="outlineNavy" asChild>
+            <Link to="/cotizar">Cotizar otro vehículo</Link>
+          </Button>
+        </div>
       </header>
 
       {comprada ? (

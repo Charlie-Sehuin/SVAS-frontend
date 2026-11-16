@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
-import { Route, Routes } from 'react-router-dom';
+import { Link, Route, Routes } from 'react-router-dom';
 import { server } from '../../test/msw/server';
 import { API } from '../../test/msw/handlers';
 import { renderConProviders } from '../../test/render';
@@ -103,6 +103,114 @@ describe('Asistente de cotizar', () => {
     expect(screen.getByLabelText(/whatsapp/i)).not.toBeChecked();
   });
 
+  it('con la sesión iniciada, nombres, apellidos y correo salen de la cuenta y no se editan; el celular viene lleno pero se puede cambiar', async () => {
+    catalogoGeografico();
+    server.use(
+      http.get(`${API}/usuarios/me/contacto`, () =>
+        HttpResponse.json({
+          contacto: { nombres: 'maria', apellidos: 'paredes', telefono: '985412305', email: 'maria@correo.pe', canal: 'WHATSAPP' },
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderConProviders(
+      <Routes>
+        <Route path="/cotizar" element={<CotizarPage />} />
+      </Routes>,
+      { ruta: '/cotizar', roles: ['CLIENTE'] },
+    );
+    await completarPaso1(user);
+    await completarPaso2(user);
+    await screen.findByRole('heading', { name: '¿Dónde te enviamos tus cotizaciones?' });
+
+    await waitFor(() => expect(screen.getByLabelText(/^nombres/i)).toHaveValue('Maria'));
+    // Se muestran con mayúscula inicial aunque la ficha los tenga en minúscula.
+    for (const [etiqueta, valor] of [
+      [/^nombres/i, 'Maria'],
+      [/^apellidos/i, 'Paredes'],
+      [/^correo electrónico/i, 'maria@correo.pe'],
+    ] as const) {
+      const campo = screen.getByLabelText(etiqueta);
+      expect(campo).toHaveValue(valor);
+      expect(campo).toHaveAttribute('readonly');
+    }
+    const celular = screen.getByLabelText(/^celular/i);
+    expect(celular).toHaveValue('985412305');
+    expect(celular).not.toHaveAttribute('readonly');
+    await user.clear(celular);
+    await user.type(celular, '912345678');
+    expect(celular).toHaveValue('912345678');
+    expect(screen.getByText(/Usamos los datos de tu cuenta/)).toBeInTheDocument();
+  });
+
+  it('sin sesión, los datos de contacto se escriben a mano', async () => {
+    catalogoGeografico();
+    const user = userEvent.setup();
+    renderWizard();
+    await completarPaso1(user);
+    await completarPaso2(user);
+    await screen.findByRole('heading', { name: '¿Dónde te enviamos tus cotizaciones?' });
+    expect(screen.getByLabelText(/^nombres/i)).not.toHaveAttribute('readonly');
+    expect(screen.queryByText(/Usamos los datos de tu cuenta/)).not.toBeInTheDocument();
+  });
+
+  describe('borrador conservado tras cotizar', () => {
+    const borradorDeUnaCotizacion = (terminada: boolean) => {
+      const s = useCotizarWizardStore.getState();
+      s.guardarBorrador({ vehiculo: { marcaId: 'm1', modeloId: 'mo1', anio: '2022' } });
+      s.setPaso(3);
+      if (terminada) s.marcarTerminado(ID);
+    };
+    const renderDesdeOtraPagina = (state?: { editar: boolean }) =>
+      renderConProviders(
+        <Routes>
+          <Route path="/" element={<Link to="/cotizar" state={state}>ir a cotizar</Link>} />
+          <Route path="/cotizar" element={<CotizarPage />} />
+        </Routes>,
+        { ruta: '/' },
+      );
+    const TITULO_PASO_3 = '¿Dónde te enviamos tus cotizaciones?';
+
+    it('al volver con la flecha (o recargar) se conserva lo escrito y se cae en el último paso', async () => {
+      catalogoGeografico();
+      borradorDeUnaCotizacion(true);
+      renderWizard(); // abrir la ruta directamente es lo mismo que volver con la flecha: navegación POP
+      expect(await screen.findByRole('heading', { name: TITULO_PASO_3 })).toBeInTheDocument();
+      expect(useCotizarWizardStore.getState().borrador.vehiculo.marcaId).toBe('m1');
+    });
+
+    it('entrar por un enlace nuevo después de cotizar empieza de cero', async () => {
+      catalogoGeografico();
+      borradorDeUnaCotizacion(true);
+      const user = userEvent.setup();
+      renderDesdeOtraPagina();
+      await user.click(screen.getByRole('link', { name: 'ir a cotizar' }));
+      expect(await screen.findByRole('heading', { name: '¿Qué auto quieres asegurar?' })).toBeInTheDocument();
+      expect(useCotizarWizardStore.getState().borrador.vehiculo.marcaId).toBe('');
+      expect(useCotizarWizardStore.getState().ultimaCotizacionId).toBeNull();
+    });
+
+    it('con "Editar mis datos" se conserva lo escrito', async () => {
+      catalogoGeografico();
+      borradorDeUnaCotizacion(true);
+      const user = userEvent.setup();
+      renderDesdeOtraPagina({ editar: true });
+      await user.click(screen.getByRole('link', { name: 'ir a cotizar' }));
+      expect(await screen.findByRole('heading', { name: TITULO_PASO_3 })).toBeInTheDocument();
+      expect(useCotizarWizardStore.getState().borrador.vehiculo.marcaId).toBe('m1');
+    });
+
+    it('un trámite a medias (sin cotización) no se borra al entrar por un enlace', async () => {
+      catalogoGeografico();
+      borradorDeUnaCotizacion(false);
+      const user = userEvent.setup();
+      renderDesdeOtraPagina();
+      await user.click(screen.getByRole('link', { name: 'ir a cotizar' }));
+      expect(await screen.findByRole('heading', { name: TITULO_PASO_3 })).toBeInTheDocument();
+      expect(useCotizarWizardStore.getState().borrador.vehiculo.marcaId).toBe('m1');
+    });
+  });
+
   it('valida cada paso antes de avanzar y dice qué aseguradoras piden el distrito (RF-03)', async () => {
     catalogoGeografico();
     const user = userEvent.setup();
@@ -152,7 +260,9 @@ describe('Asistente de cotizar', () => {
       contacto: { nombres: 'Ana', apellidos: 'Ríos', telefono: '987654321', email: 'ana@example.com', canalPreferido: 'WHATSAPP' },
     });
     expect(useCotizacionTokenStore.getState().obtener(ID)).toBe('tok-123');
-    expect(useCotizarWizardStore.getState().borrador.vehiculo.marcaId).toBe(''); // el borrador se limpia al terminar
+    // El borrador se conserva para poder volver y corregirlo; queda ligado a la cotización que salió de él.
+    expect(useCotizarWizardStore.getState().borrador.vehiculo.marcaId).toBe('m1');
+    expect(useCotizarWizardStore.getState().ultimaCotizacionId).toBe(ID);
   });
 
   it('manda la placa en mayúsculas y la clase elegida del catálogo', async () => {
@@ -353,6 +463,21 @@ const campoSuma = () => screen.getByLabelText('Tu suma asegurada, en dólares');
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('Comparativo de planes', () => {
+  it('ofrece "Editar mis datos" solo si el borrador del formulario es el de esta cotización', async () => {
+    servirResumen();
+    useCotizarWizardStore.getState().marcarTerminado('otra-cotizacion');
+    renderComparativo();
+    await screen.findByRole('heading', { level: 1, name: /Honda CR-V 2022/ });
+    expect(screen.queryByRole('link', { name: 'Editar mis datos' })).not.toBeInTheDocument();
+  });
+
+  it('con el borrador de esta cotización, "Editar mis datos" vuelve al formulario', async () => {
+    servirResumen();
+    useCotizarWizardStore.getState().marcarTerminado('cot-1');
+    renderComparativo();
+    expect(await screen.findByRole('link', { name: 'Editar mis datos' })).toHaveAttribute('href', '/cotizar');
+  });
+
   it('un bloque por aseguradora, la cuota mensual como protagonista y la que no cotiza en gris al final', async () => {
     servirResumen();
     renderComparativo();

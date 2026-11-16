@@ -21,7 +21,7 @@ import { Button } from '../../shared/ui/button';
 import { Card } from '../../shared/ui/card';
 import { cn } from '../../shared/lib/utils';
 import { SelectorVehiculoCascada, type ValorVehiculo } from '../cotizacion/components/SelectorVehiculoCascada';
-import { useCotizarWizardStore } from '../cotizacion/store/useCotizarWizardStore';
+import { BORRADOR_VACIO, useCotizarWizardStore } from '../cotizacion/store/useCotizarWizardStore';
 
 /**
  * Landing (diseño visual §9.1). Conserva la identidad de la web actual
@@ -75,10 +75,12 @@ function Hero() {
  */
 function HeroCotizador() {
   const navigate = useNavigate();
-  const { borrador, guardarBorrador, setPaso } = useCotizarWizardStore();
-  const [vehiculo, setVehiculo] = useState<ValorVehiculo>(borrador.vehiculo);
+  const { borrador, guardarBorrador, setPaso, ultimaCotizacionId, reiniciar } = useCotizarWizardStore();
+  // Si el borrador ya produjo una cotización, la portada empieza limpia: no ofrece el auto de la vez anterior.
+  const [vehiculo, setVehiculo] = useState<ValorVehiculo>(ultimaCotizacionId ? BORRADOR_VACIO.vehiculo : borrador.vehiculo);
 
   const continuar = () => {
+    if (ultimaCotizacionId) reiniciar();
     guardarBorrador({ vehiculo });
     setPaso(1);
     navigate('/cotizar');

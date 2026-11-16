@@ -4,7 +4,7 @@
  */
 export const qk = {
   salud: { ready: ['salud', 'ready'] as const },
-  usuario: { me: ['usuario', 'me'] as const },
+  usuario: { me: ['usuario', 'me'] as const, contacto: ['usuario', 'me', 'contacto'] as const },
 
   catalogo: {
     campos: ['catalogo', 'campos'] as const,

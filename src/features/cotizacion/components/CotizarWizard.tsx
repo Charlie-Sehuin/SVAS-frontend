@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { FormProvider, useForm, type FieldErrors, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { isApiError } from '../../../shared/lib/api-client';
 import { TELEFONO_HREF } from '../../../shared/lib/contacto';
@@ -51,8 +51,22 @@ const primerPasoConError = (rutas: string[]): PasoWizard | null =>
  */
 export function CotizarWizard() {
   const campos = useCamposCatalogo();
+  const tipoNavegacion = useNavigationType();
+  const location = useLocation();
+  const [preparado, setPreparado] = useState(false);
+
+  // Al entrar: si el borrador ya produjo una cotización, se empieza de cero... salvo que se vuelva con la flecha del
+  // navegador (POP) o con "Editar mis datos" (state.editar): ahí se conserva lo escrito para corregirlo.
+  useEffect(() => {
+    const editando = (location.state as { editar?: boolean } | null)?.editar === true;
+    if (tipoNavegacion !== 'POP' && !editando) useCotizarWizardStore.getState().reiniciarSiTerminado();
+    setPreparado(true);
+    // Solo al montar: una nueva visita monta de nuevo el componente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (campos.isError) return <EstadoError error={campos.error} onRetry={() => void campos.refetch()} />;
-  if (campos.isLoading || !campos.data) {
+  if (campos.isLoading || !campos.data || !preparado) {
     return (
       <div className="space-y-4" aria-busy aria-label="Cargando el formulario">
         <Skeleton className="h-6 w-1/3" />
@@ -69,7 +83,7 @@ export function CotizarWizard() {
 function WizardForm({ catalogo }: { catalogo: CatalogoCampos }) {
   const navigate = useNavigate();
   const cotizar = useCotizar();
-  const { paso, setPaso, borrador, guardarBorrador, reiniciar } = useCotizarWizardStore();
+  const { paso, setPaso, borrador, guardarBorrador } = useCotizarWizardStore();
   const [bloqueo, setBloqueo] = useState<string | null>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const primerRender = useRef(true);
@@ -113,14 +127,15 @@ function WizardForm({ catalogo }: { catalogo: CatalogoCampos }) {
       setBloqueo(null);
       try {
         const r = await cotizar.mutateAsync(armarRequest(v));
-        // El asistente borra su borrador, pero el registro de la compra reutiliza estos datos (solo falta la contraseña).
+        // El registro de la compra reutiliza estos datos (solo falta la contraseña).
         useContactoPrevioStore.getState().guardar({
           nombres: v.contacto.nombres.trim(),
           apellidos: v.contacto.apellidos.trim(),
           telefono: v.contacto.telefono.replace(/[\s-]/g, ''),
           email: v.contacto.email.trim().toLowerCase(),
         });
-        reiniciar();
+        // El borrador se conserva (para volver con la flecha o con "Editar mis datos"); se borra al empezar otra cotización.
+        useCotizarWizardStore.getState().marcarTerminado(r.cotizacion.id);
         // RF-05: si alguna aseguradora no cotizó, aviso ámbar (la operación SÍ se ejecutó).
         if (r.warning) WarningToast(r.warning, `warning-${r.cotizacion.id}-${r.warning.code}`);
         navigate(`/cotizacion/${r.cotizacion.id}`);
