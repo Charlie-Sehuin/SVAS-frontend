@@ -289,23 +289,48 @@ describe('Asistente de compra', () => {
     expect(screen.getByText('Paso 2 de 3', { exact: false })).toBeInTheDocument();
   });
 
-  it('exige firma y aceptación antes de crear la compra', async () => {
+  it('la firma viene con el nombre de la cuenta, no se puede cambiar y exige aceptar las condiciones', async () => {
     const user = userEvent.setup();
     const { cuerpos } = mockAsistente({});
     renderCompra();
     await user.click(await screen.findByRole('button', { name: 'Continuar' }));
 
+    const firma = screen.getByLabelText(/Tu firma/);
+    expect(firma).toHaveValue('Usuario Prueba');
+    expect(firma).toHaveAttribute('readonly');
+
     await user.click(screen.getByRole('button', { name: 'Firmar y continuar' }));
-    expect(screen.getByText('Escribe tu nombre completo como firma')).toBeInTheDocument();
     expect(screen.getByText('Debes aceptar las condiciones para continuar')).toBeInTheDocument();
     expect(cuerpos).toHaveLength(0);
 
-    await user.type(screen.getByLabelText(/Tu firma/), '  Ana Cliente  ');
+    // Aunque se intente escribir otro nombre, se firma con el de la cuenta.
+    await user.type(firma, 'Otra Persona');
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Firmar y continuar' }));
 
     expect(await screen.findByRole('heading', { name: 'Elige cómo pagar' })).toBeInTheDocument();
-    expect(cuerpos[0]).toEqual({ cotizacionId: COT, primaCotizadaId: PRIMA, aceptaCondiciones: true, firmaSimulada: 'Ana Cliente' });
+    expect(cuerpos[0]).toEqual({ cotizacionId: COT, primaCotizadaId: PRIMA, aceptaCondiciones: true, firmaSimulada: 'Usuario Prueba' });
+  });
+
+  it('la firma usa el nombre del perfil (GET /usuarios/me), con mayúscula inicial', async () => {
+    const user = userEvent.setup();
+    const { cuerpos } = mockAsistente({});
+    server.use(
+      http.get(`${API}/usuarios/me`, () =>
+        HttpResponse.json({ id: 'u1', email: 'maria@correo.pe', rol: 'CLIENTE', nombreCompleto: 'maria paredes', activo: true }),
+      ),
+    );
+    renderCompra();
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }));
+
+    const firma = screen.getByLabelText(/Tu firma/);
+    await waitFor(() => expect(firma).toHaveValue('Maria Paredes'));
+    expect(firma).toHaveAttribute('readonly');
+
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Firmar y continuar' }));
+    await screen.findByRole('heading', { name: 'Elige cómo pagar' });
+    expect(cuerpos[0]).toMatchObject({ firmaSimulada: 'Maria Paredes' });
   });
 
   it('una compra que llegó por el enlace de retoma manda origen RETOMA al crear la orden', async () => {
@@ -363,6 +388,30 @@ describe('Asistente de compra', () => {
     expect(claves).toHaveLength(1);
     expect(claves[0]).toMatch(/^[A-Za-z0-9_.:-]{8,100}$/);
     expect(cuerpos.at(-1)).toEqual({ modo: 'UNICO' });
+  });
+
+  it('ofrece tarjeta de crédito, tarjeta de débito, Yape y Plin; el medio es de demostración y no viaja al backend', async () => {
+    const user = userEvent.setup();
+    const { cuerpos } = mockAsistente({});
+    renderCompra();
+    await llegarAlPago(user);
+
+    for (const nombre of [/Tarjeta de crédito/, /Tarjeta de débito/, /Yape/, /Plin/]) {
+      expect(screen.getByRole('radio', { name: nombre })).toBeInTheDocument();
+    }
+    // Por defecto, tarjeta de crédito, con una tarjeta de prueba ya cargada (no se escribe ningún dato).
+    expect(screen.getByRole('radio', { name: /Tarjeta de crédito/ })).toBeChecked();
+    expect(screen.getByText('4111 1111 1111 1111')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: /Yape/ }));
+    expect(screen.getByRole('radio', { name: /Yape/ })).toBeChecked();
+    expect(screen.getByText(/Simularemos la aprobación desde/)).toHaveTextContent('Yape');
+    expect(screen.queryByText('4111 1111 1111 1111')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Pagar USD 619.20' }));
+    expect(await screen.findByText(`destino /compra/${ORDEN}/listo`)).toBeInTheDocument();
+    expect(cuerpos.at(-1)).toEqual({ modo: 'UNICO' }); // el medio no se manda
   });
 
   it('paga en cuotas con el total del backend y el número de cuotas que ofrece', async () => {
