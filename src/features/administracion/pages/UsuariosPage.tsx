@@ -27,11 +27,14 @@ import { useCambiarEstadoUsuario, useCambiarRolUsuario, useCrearUsuario, useUsua
 
 const TAMANO = 20;
 const ROLES_INTERNOS: readonly RolInterno[] = ['ASESOR', 'ADMINISTRADOR'];
+/** El personal (asesores y administradores) va separado de los clientes. */
+const PESTANAS: readonly Rol[] = ['ASESOR', 'ADMINISTRADOR', 'CLIENTE'];
+const TEXTO_PESTANA: Record<Rol, string> = { ASESOR: 'Asesores', ADMINISTRADOR: 'Administradores', CLIENTE: 'Clientes' };
 
 /** Usuarios y roles (RF-31, RF-32). Solo ADMINISTRADOR. Crea ASESOR o ADMINISTRADOR; el CLIENTE nace del registro en el embudo. */
 export function UsuariosPage() {
   const [busqueda, setBusqueda] = useState('');
-  const [rol, setRol] = useState<Rol | ''>('');
+  const [rol, setRol] = useState<Rol>('ASESOR');
   const [estado, setEstado] = useState<'' | 'true' | 'false'>('');
   const [pagina, setPagina] = useState(1);
   const [crearAbierto, setCrearAbierto] = useState(false);
@@ -79,22 +82,24 @@ export function UsuariosPage() {
             className="h-10"
           />
         </Filtro>
-        <Filtro label="Rol">
-          <Select
-            compact
-            value={rol}
-            onChange={(e) => {
-              setRol(e.target.value as Rol | '');
-              reiniciarPagina();
-            }}
-          >
-            <option value="">Todos</option>
-            {(Object.keys(TEXTO_ROL) as Rol[]).map((r) => (
-              <option key={r} value={r}>
-                {TEXTO_ROL[r]}
-              </option>
+        <Filtro label="Ver">
+          <div role="group" aria-label="Tipo de usuario" className="flex gap-1">
+            {PESTANAS.map((r) => (
+              <Button
+                key={r}
+                type="button"
+                size="sm"
+                variant={rol === r ? 'primary' : 'secondary'}
+                aria-pressed={rol === r}
+                onClick={() => {
+                  setRol(r);
+                  reiniciarPagina();
+                }}
+              >
+                {TEXTO_PESTANA[r]}
+              </Button>
             ))}
-          </Select>
+          </div>
         </Filtro>
         <Filtro label="Estado">
           <Select
