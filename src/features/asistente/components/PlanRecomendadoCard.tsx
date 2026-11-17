@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import type { PlanRecomendado } from '../../../shared/types/api';
 import { Card } from '../../../shared/ui/card';
 import { MoneyValue } from '../../../shared/ui/domain/MoneyValue';
@@ -7,7 +6,7 @@ import { MoneyValue } from '../../../shared/ui/domain/MoneyValue';
  * Plan que el asistente recomienda. Los montos (si hay cotización) los calculó el backend y se pintan tal cual:
  * el frontend no calcula ni redondea dinero, y el texto del asistente nunca los aporta.
  */
-export function PlanRecomendadoCard({ plan, cotizacionId }: { plan: PlanRecomendado; cotizacionId: string | null }) {
+export function PlanRecomendadoCard({ plan, onVer }: { plan: PlanRecomendado; onVer?: (plan: PlanRecomendado) => void }) {
   return (
     <Card className="p-3">
       <p className="text-caption text-ink-soft">{plan.aseguradora}</p>
@@ -22,13 +21,14 @@ export function PlanRecomendadoCard({ plan, cotizacionId }: { plan: PlanRecomend
           </span>
         </div>
       ) : null}
-      {cotizacionId ? (
-        <Link
-          to={`/cotizacion/${cotizacionId}`}
-          className="mt-2 inline-block text-small font-bold text-brand-600 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-brand-300"
+      {plan.primaCotizadaId && onVer ? (
+        <button
+          type="button"
+          onClick={() => onVer(plan)}
+          className="mt-2 text-small font-bold text-brand-600 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-brand-300"
         >
           Ver en mi cotización
-        </Link>
+        </button>
       ) : null}
     </Card>
   );

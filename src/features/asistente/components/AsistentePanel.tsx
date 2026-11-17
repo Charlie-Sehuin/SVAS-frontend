@@ -5,7 +5,7 @@ import { Camera, Headset, RotateCcw, Send, X } from 'lucide-react';
 import { isApiError } from '../../../shared/lib/api-client';
 import { cn } from '../../../shared/lib/utils';
 import { reducirImagen } from '../../../shared/lib/imagen';
-import type { AccionAsistente } from '../../../shared/types/api';
+import type { AccionAsistente, PlanRecomendado } from '../../../shared/types/api';
 import { Button } from '../../../shared/ui/button';
 import { useReconocerVehiculo } from '../../cotizacion/hooks/useCatalogo';
 import { useCotizarWizardStore } from '../../cotizacion/store/useCotizarWizardStore';
@@ -138,6 +138,22 @@ export function AsistentePanel({ cotizacionId }: { cotizacionId: string | null }
     }
   }
 
+  /**
+   * "Ver en mi cotización": cierra el chat (en el celular tapa toda la pantalla) y lleva a ese plan en el
+   * comparativo, resaltándolo un momento. Si la pantalla no es el comparativo, abre la cotización.
+   */
+  function verPlan(plan: PlanRecomendado) {
+    abrir(false);
+    const tarjeta = plan.primaCotizadaId ? document.getElementById(`plan-${plan.primaCotizadaId}`) : null;
+    if (!tarjeta) {
+      if (cotizacionId) navigate(`/cotizacion/${cotizacionId}`);
+      return;
+    }
+    tarjeta.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    tarjeta.classList.add('ring-2', 'ring-brand-500');
+    window.setTimeout(() => tarjeta.classList.remove('ring-2', 'ring-brand-500'), 2500);
+  }
+
   function alEnviar(e: FormEvent) {
     e.preventDefault();
     enviar(texto);
@@ -148,6 +164,11 @@ export function AsistentePanel({ cotizacionId }: { cotizacionId: string | null }
   }
 
   const hayError = error !== null && mensajes.at(-1)?.rol === 'usuario';
+
+  // Cada botón se muestra solo en la última respuesta que lo ofrece (no se repite en las anteriores), y con una
+  // cotización a la vista ya no tiene sentido "Cotizar ahora".
+  const ultimaOferta = new Map<AccionAsistente, number>();
+  mensajes.forEach((m, i) => m.acciones?.forEach((a) => ultimaOferta.set(a, i)));
 
   return (
     <section
@@ -199,8 +220,16 @@ export function AsistentePanel({ cotizacionId }: { cotizacionId: string | null }
             ))}
           </div>
         ) : null}
-        {mensajes.map((m) => (
-          <MensajeVista key={m.id} mensaje={m} cotizacionId={cotizacionId} vehiculo={vehiculo !== null} onAccion={alAccion} />
+        {mensajes.map((m, i) => (
+          <MensajeVista
+            key={m.id}
+            mensaje={m}
+            acciones={(m.acciones ?? []).filter((a) => ultimaOferta.get(a) === i && !(a === 'COTIZAR' && cotizacionId))}
+            cotizacionId={cotizacionId}
+            vehiculo={vehiculo !== null}
+            onAccion={alAccion}
+            onVerPlan={verPlan}
+          />
         ))}
         {ocupado ? (
           <p role="status" className="text-small text-ink-soft">
@@ -300,23 +329,27 @@ const ETIQUETA_ACCION: Record<AccionAsistente, string> = {
 
 function MensajeVista({
   mensaje,
+  acciones,
   cotizacionId,
   vehiculo,
   onAccion,
+  onVerPlan,
 }: {
   mensaje: MensajeChat;
+  acciones: AccionAsistente[];
   cotizacionId: string | null;
   /** Hay un auto reconocido por foto: "Cotizar" lo lleva al formulario. */
   vehiculo: boolean;
   onAccion: (accion: AccionAsistente) => void;
+  onVerPlan: (plan: PlanRecomendado) => void;
 }) {
   return (
     <div className="space-y-2">
       <Burbuja rol={mensaje.rol} texto={mensaje.texto} />
-      {mensaje.planes?.map((p) => <PlanRecomendadoCard key={p.planId} plan={p} cotizacionId={cotizacionId} />)}
-      {mensaje.acciones?.length ? (
+      {mensaje.planes?.map((p) => <PlanRecomendadoCard key={p.planId} plan={p} onVer={cotizacionId ? onVerPlan : undefined} />)}
+      {acciones.length ? (
         <div className="flex flex-wrap gap-2">
-          {mensaje.acciones.map((a) => (
+          {acciones.map((a) => (
             <Button key={a} type="button" variant={a === 'HABLAR_ASESOR' ? 'outlineNavy' : 'secondary'} size="sm" onClick={() => onAccion(a)}>
               {a === 'HABLAR_ASESOR' ? <Headset aria-hidden /> : a === 'ENVIAR_FOTO' ? <Camera aria-hidden /> : null}
               {a === 'COTIZAR' && vehiculo ? 'Cotizar con estos datos' : ETIQUETA_ACCION[a]}

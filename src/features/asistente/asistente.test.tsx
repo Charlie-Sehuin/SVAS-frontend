@@ -43,7 +43,15 @@ function renderSitio(ruta = '/', formularioReal = false) {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<p>portada</p>} />
           <Route path="/cotizar" element={formularioReal ? <CotizarPage /> : <p>formulario de cotizar</p>} />
-          <Route path="/cotizacion/:id" element={<p>comparativo</p>} />
+          <Route
+            path="/cotizacion/:id"
+            element={
+              <div>
+                <p>comparativo</p>
+                <article id="plan-pc1">tarjeta del plan</article>
+              </div>
+            }
+          />
           <Route path="/cotizacion/:id/prueba" element={<p>prueba de choque</p>} />
         </Route>
       </Routes>
@@ -177,11 +185,77 @@ describe('Asistente (chatbot)', () => {
     expect(cuerpo).not.toHaveProperty('vehiculo');
     expect(within(ventana).getByLabelText(/36 dólares con 59 centavos al mes/i)).toBeInTheDocument();
     expect(within(ventana).getByText(/al año/i)).toBeInTheDocument();
-    expect(within(ventana).getByRole('link', { name: /ver en mi cotización/i })).toHaveAttribute('href', `/cotizacion/${ID}`);
+    expect(within(ventana).getByRole('button', { name: /ver en mi cotización/i })).toBeInTheDocument();
 
     await user.click(within(ventana).getByRole('button', { name: 'Pon a prueba estos planes' }));
     expect(screen.getByTestId('ruta')).toHaveTextContent(`/cotizacion/${ID}/prueba`);
     expect(screen.queryByRole('dialog', { name: /asistente de segurosimple/i })).not.toBeInTheDocument();
+  });
+
+  it('"Ver en mi cotización" cierra el chat y resalta ese plan en el comparativo', async () => {
+    useCotizacionTokenStore.getState().guardar(ID, 'token-de-la-cotizacion');
+    server.use(
+      http.post(`${API}/cotizaciones/${ID}/asistente/mensajes`, () =>
+        HttpResponse.json(
+          respuesta({
+            planesRecomendados: [
+              { planId: 'p1', aseguradora: 'Rímac', plan: 'Plata', resumen: null, motivo: 'El más barato.', primaCotizadaId: 'pc1', primaAnual: '439.13', primaMensual: '36.59' },
+            ],
+          }),
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderSitio(`/cotizacion/${ID}`);
+    const ventana = await abrirChat(user);
+    await user.type(within(ventana).getByRole('textbox', { name: /tu mensaje/i }), 'Cuál me conviene');
+    await user.click(within(ventana).getByRole('button', { name: 'Enviar' }));
+    await user.click(await within(ventana).findByRole('button', { name: /ver en mi cotización/i }));
+    expect(screen.queryByRole('dialog', { name: /asistente de segurosimple/i })).not.toBeInTheDocument();
+    expect(screen.getByText('tarjeta del plan')).toHaveClass('ring-2');
+  });
+
+  it('un botón no se repite: solo sale en la última respuesta que lo ofrece', async () => {
+    let turno = 0;
+    server.use(
+      http.post(`${API}/asistente/mensajes`, () => {
+        turno += 1;
+        return HttpResponse.json(respuesta({ respuesta: `respuesta ${turno}`, acciones: turno <= 2 ? ['COTIZAR'] : [] }));
+      }),
+    );
+    const user = userEvent.setup();
+    renderSitio();
+    const ventana = await abrirChat(user);
+    const campo = within(ventana).getByRole('textbox', { name: /tu mensaje/i });
+    await user.type(campo, 'uno');
+    await user.click(within(ventana).getByRole('button', { name: 'Enviar' }));
+    expect(await within(ventana).findByRole('button', { name: 'Cotizar ahora' })).toBeInTheDocument();
+    await user.type(campo, 'dos');
+    await user.click(within(ventana).getByRole('button', { name: 'Enviar' }));
+    await within(ventana).findByText('respuesta 2');
+    // Los dos mensajes lo ofrecieron, pero solo queda el botón del más reciente.
+    expect(within(ventana).getAllByRole('button', { name: 'Cotizar ahora' })).toHaveLength(1);
+    await user.type(campo, 'tres');
+    await user.click(within(ventana).getByRole('button', { name: 'Enviar' }));
+    await within(ventana).findByText('respuesta 3');
+    // Una respuesta sin botones no borra el último que se ofreció.
+    expect(within(ventana).getAllByRole('button', { name: 'Cotizar ahora' })).toHaveLength(1);
+  });
+
+  it('con una cotización a la vista no ofrece "Cotizar ahora" aunque el asistente lo sugiera', async () => {
+    useCotizacionTokenStore.getState().guardar(ID, 'token-de-la-cotizacion');
+    server.use(
+      http.post(`${API}/cotizaciones/${ID}/asistente/mensajes`, () =>
+        HttpResponse.json(respuesta({ acciones: ['COTIZAR', 'HABLAR_ASESOR'] })),
+      ),
+    );
+    const user = userEvent.setup();
+    renderSitio(`/cotizacion/${ID}`);
+    const ventana = await abrirChat(user);
+    await user.type(within(ventana).getByRole('textbox', { name: /tu mensaje/i }), 'hola');
+    await user.click(within(ventana).getByRole('button', { name: 'Enviar' }));
+    expect(await within(ventana).findByRole('button', { name: /hablar con un asesor/i })).toBeInTheDocument();
+    expect(within(ventana).queryByRole('button', { name: 'Cotizar ahora' })).not.toBeInTheDocument();
   });
 
   it('si el servicio falla muestra el mensaje del backend y "Reintentar" vuelve a pedir la respuesta', async () => {
