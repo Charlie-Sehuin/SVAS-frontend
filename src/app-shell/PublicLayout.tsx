@@ -6,6 +6,7 @@ import { TELEFONO, TELEFONO_HREF } from '../shared/lib/contacto';
 import { useApplyTheme } from '../design-system/ThemeProvider';
 import { cn } from '../shared/lib/utils';
 import { iniciales } from '../shared/lib/format';
+import { AsistenteBurbuja } from '../features/asistente/components/AsistenteBurbuja';
 import { Button } from '../shared/ui/button';
 import {
   DropdownMenu,
@@ -62,6 +63,7 @@ export function PublicLayout() {
         <Outlet />
       </main>
       <Footer />
+      <AsistenteBurbuja cotizacionId={cotizacionDeLaRuta(pathname)} />
     </div>
   );
 }
