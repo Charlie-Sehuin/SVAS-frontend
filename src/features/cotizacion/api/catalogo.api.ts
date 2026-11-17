@@ -7,6 +7,7 @@ import type {
   Marca,
   Modelo,
   Provincia,
+  VehiculoReconocido,
 } from '../../../shared/types/api';
 
 /** Catálogo público del formulario de cotización (doc conexión §6). Sin JWT. */
@@ -15,6 +16,13 @@ export const listarMarcas = () => api.get('catalogo/vehiculos/marcas').json<Marc
 export const listarModelos = (marcaId: string) =>
   api.get(`catalogo/vehiculos/marcas/${marcaId}/modelos`).json<Modelo[]>();
 export const listarAnios = (modeloId: string) => api.get(`catalogo/vehiculos/modelos/${modeloId}/anios`).json<number[]>();
+
+/** Foto del auto → marca y modelo del catálogo. Multipart: ky pone solo el Content-Type con el boundary. */
+export const reconocerVehiculo = (foto: Blob) => {
+  const body = new FormData();
+  body.append('foto', foto, 'foto.jpg');
+  return api.post('catalogo/vehiculos/reconocer', { body }).json<VehiculoReconocido>();
+};
 
 export const listarDepartamentos = () => api.get('catalogo/ubigeos/departamentos').json<Departamento[]>();
 export const listarProvincias = (departamento: string) =>

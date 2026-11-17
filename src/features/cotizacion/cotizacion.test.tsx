@@ -352,6 +352,67 @@ function renderComparativo() {
 const campoSuma = () => screen.getByLabelText('Tu suma asegurada, en dólares');
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+describe('Reconocer el auto por foto', () => {
+  const foto = () => new File(['x'], 'auto.jpg', { type: 'image/jpeg' });
+
+  it('rellena marca y modelo, deja el año sin elegir y sugiere los años probables', async () => {
+    catalogoGeografico();
+    server.use(
+      http.post(`${API}/catalogo/vehiculos/reconocer`, () =>
+        HttpResponse.json({
+          reconocido: true,
+          marca: { id: 'm1', nombre: 'Toyota' },
+          modelo: { id: 'mo1', nombre: 'Corolla' },
+          aniosProbables: [2023, 2022],
+          confianza: 0.9,
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWizard();
+    await screen.findByRole('option', { name: 'Toyota' }, { timeout: 5000 });
+    await user.upload(screen.getByLabelText(/foto de tu auto/i), foto());
+    expect(await screen.findByText(/parece un toyota corolla/i)).toBeInTheDocument();
+    expect(screen.getByText(/podría ser 2023, 2022/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(/^marca/i)).toHaveValue('m1'));
+    await waitFor(() => expect(screen.getByLabelText(/^modelo/i)).toHaveValue('mo1'));
+    expect(screen.getByLabelText(/^año/i)).toHaveValue(''); // RN-44: el año lo confirma el cliente
+  });
+
+  it('si no reconoce el auto, lo dice y no toca el formulario', async () => {
+    catalogoGeografico();
+    server.use(
+      http.post(`${API}/catalogo/vehiculos/reconocer`, () =>
+        HttpResponse.json({ reconocido: false, aniosProbables: [], confianza: 0 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWizard();
+    await screen.findByRole('option', { name: 'Toyota' }, { timeout: 5000 });
+    await user.upload(screen.getByLabelText(/foto de tu auto/i), foto());
+    expect(await screen.findByText(/no pudimos reconocer tu auto/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^marca/i)).toHaveValue('');
+  });
+
+  it('si el servicio falla, muestra el mensaje del backend y se puede seguir a mano', async () => {
+    catalogoGeografico();
+    server.use(
+      http.post(`${API}/catalogo/vehiculos/reconocer`, () =>
+        HttpResponse.json(
+          { statusCode: 503, message: 'El reconocimiento por foto no está disponible por ahora' },
+          { status: 503 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWizard();
+    await screen.findByRole('option', { name: 'Toyota' }, { timeout: 5000 });
+    await user.upload(screen.getByLabelText(/foto de tu auto/i), foto());
+    expect(await screen.findByText(/no está disponible por ahora/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^marca/i)).toBeEnabled();
+  });
+});
+
 describe('Comparativo de planes', () => {
   it('un bloque por aseguradora, la cuota mensual como protagonista y la que no cotiza en gris al final', async () => {
     servirResumen();
