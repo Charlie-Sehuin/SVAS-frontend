@@ -101,7 +101,9 @@ describe('Asistente de cotizar', () => {
     await user.click(screen.getByLabelText(/llamada/i));
     expect(screen.getByLabelText(/llamada/i)).toBeChecked();
     expect(screen.getByLabelText(/whatsapp/i)).not.toBeChecked();
-  });
+    // Recorre dos pasos del formulario: sola tarda <1 s, pero con toda la suite en paralelo a veces pasaba de los 5 s
+    // por defecto (falla de tiempo, no de lógica). Más margen para que no falle de forma intermitente.
+  }, 15_000);
 
   it('con la sesión iniciada, nombres, apellidos y correo salen de la cuenta y no se editan; el celular viene lleno pero se puede cambiar', async () => {
     catalogoGeografico();
