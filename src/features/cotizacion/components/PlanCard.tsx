@@ -41,7 +41,8 @@ export function PlanCard({ prima, cotizacionId, opciones, actualizando = false, 
   const puedeAsesor = opciones.includes('ASESORIA') && !comprada;
 
   return (
-    <Card className="flex h-full flex-col p-4 lg:p-5">
+    // `id`: el asistente (chatbot) lleva aquí a quien toca "Ver en mi cotización"; `scroll-mt` deja libre la barra fija.
+    <Card id={`plan-${prima.id}`} className="flex h-full scroll-mt-48 flex-col p-4 transition-shadow lg:p-5">
       <p className="text-caption text-ink-soft">{prima.aseguradora}</p>
       <h3 className="mt-0.5 text-h3 text-navy-700">Plan {prima.plan}</h3>
       {prima.resumen ? <p className="mt-1 text-small text-ink-soft">{prima.resumen}</p> : null}
