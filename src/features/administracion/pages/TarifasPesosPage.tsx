@@ -124,8 +124,9 @@ export function TarifasPesosPage() {
 
   /* ───── CSV ───── */
   const descargar = () => {
-    const lineas = ['clave,nombre,peso', ...filas.map((f) => `${f.clave},"${f.nombre.replace(/"/g, '""')}",${valorDe(f)}`)];
-    const url = URL.createObjectURL(new Blob([lineas.join('\n')], { type: 'text/csv;charset=utf-8' }));
+    // «sep=;» y la marca UTF-8 hacen que Excel separe en columnas (y respete tildes) sea cual sea su configuración regional.
+    const lineas = ['sep=;', 'clave;nombre;peso', ...filas.map((f) => `${f.clave};"${f.nombre.replace(/"/g, '""')}";${valorDe(f)}`)];
+    const url = URL.createObjectURL(new Blob(['\uFEFF' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     const a = Object.assign(document.createElement('a'), {
       href: url,
       download: `pesos-${aseguradora?.nombre.toLowerCase().replace(/\s+/g, '-') ?? 'aseguradora'}-${tabla}.csv`,
@@ -136,7 +137,7 @@ export function TarifasPesosPage() {
 
   const cargarCsv = async (file: File) => {
     const texto = await file.text();
-    const lineas = texto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const lineas = texto.replace(/^\uFEFF/, '').split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !/^sep=/i.test(l));
     const errores: string[] = [];
     const nuevo = new Map(borrador);
     const claves = new Set(filas.map((f) => f.clave));
