@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
 import { isApiError, nuevaIdempotencyKey } from '../../../shared/lib/api-client';
-import { useAuth } from '../../../auth/useAuth';
+import { useAuth, usePerfil } from '../../../auth/useAuth';
 import { formatearMonto } from '../../../shared/lib/format';
 import type { ModoPago } from '../../../shared/types/enums';
 import { Button } from '../../../shared/ui/button';
@@ -22,7 +22,9 @@ import {
   useVinculoCotizacion,
 } from '../hooks/useCompra';
 import { vieneDeRetoma } from '../../asesoria-retencion/retoma/retoma';
+import { nombrePropio } from '../../../shared/utils/nombrePropio';
 import { ResumenCompraCard } from './ResumenCompraCard';
+import { SelectorMedioPago, type MedioPago } from './SelectorMedioPago';
 import { SelectorModoPago } from './SelectorModoPago';
 
 type Paso = 'resumen' | 'datos' | 'firma' | 'pago';
@@ -325,7 +327,13 @@ function PasoFirma({
   onAtras: () => void;
 }) {
   const { nombre: nombreSesion } = useAuth();
-  const [firma, setFirma] = useState('');
+  // La firma se autocompleta con el nombre de la cuenta (`GET /usuarios/me`) y no se puede editar: así siempre
+  // coincide con el titular. Solo si no se consigue el nombre se deja escribirla a mano.
+  const perfil = usePerfil();
+  const nombreCuenta = perfil.data?.nombreCompleto ?? nombreSesion ?? '';
+  const firmaCuenta = nombreCuenta.trim() ? nombrePropio(nombreCuenta) : '';
+  const [firmaManual, setFirmaManual] = useState('');
+  const firma = firmaCuenta || firmaManual;
   const [acepta, setAcepta] = useState(false);
   const [intento, setIntento] = useState(false);
 
@@ -353,7 +361,10 @@ function PasoFirma({
     <form onSubmit={enviar} noValidate>
       <Titulo refTitulo={tituloRef}>Firma y condiciones</Titulo>
       <p className="mb-4 text-ink-soft">
-        Escribe tu nombre completo como firma. Es una firma simulada: este es un documento de demostración sin validez legal.
+        {firmaCuenta
+          ? 'Firmarás con el nombre de tu cuenta: solo acepta las condiciones y continúa.'
+          : 'Escribe tu nombre completo como firma.'}{' '}
+        Es una firma simulada: este es un documento de demostración sin validez legal.
       </p>
 
       <Field label="Tu firma (nombre completo)" error={errorFirma} required>
@@ -361,11 +372,13 @@ function PasoFirma({
           <Input
             {...p}
             value={firma}
-            onChange={(e) => setFirma(e.target.value)}
+            onChange={(e) => setFirmaManual(e.target.value)}
+            readOnly={!!firmaCuenta || perfil.isLoading}
+            placeholder={perfil.isLoading ? 'Cargando tu nombre…' : undefined}
             maxLength={120}
             autoComplete="name"
-            placeholder={nombreSesion ?? undefined}
             invalid={!!errorFirma}
+            className={firmaCuenta ? 'bg-surface-muted' : undefined}
           />
         )}
       </Field>
@@ -432,6 +445,8 @@ function PasoPago({
 }) {
   const pagar = usePagar(ordenId);
   const [modo, setModo] = useState<ModoPago>('UNICO');
+  // El medio (tarjeta, Yape, Plin…) es solo de demostración: no viaja al backend, que simula el cobro igual con cualquiera.
+  const [medio, setMedio] = useState<MedioPago>('TARJETA_CREDITO');
   const [rechazo, setRechazo] = useState<string | null>(null);
   // Una Idempotency-Key por intento: si la red falla y se repite el clic, la misma clave evita cobrar dos veces.
   // Se renueva solo cuando el intento terminó de forma definitiva (rechazo) o cambió lo que se paga.
@@ -480,6 +495,14 @@ function PasoPago({
     <div>
       <Titulo refTitulo={tituloRef}>Elige cómo pagar</Titulo>
       <SelectorModoPago pago={pago} aseguradora={aseguradora} valor={modo} onChange={cambiarModo} deshabilitado={pagar.isPending} />
+      <SelectorMedioPago
+        valor={medio}
+        onChange={(m) => {
+          setMedio(m);
+          setRechazo(null);
+        }}
+        deshabilitado={pagar.isPending}
+      />
 
       {pagar.isPending ? (
         <p role="status" className="mt-4 flex items-center gap-2 text-ink-soft">

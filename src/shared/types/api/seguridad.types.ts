@@ -11,6 +11,17 @@ export interface Usuario {
   creadoEn?: FechaIso;
 }
 
+/** `GET /usuarios/me/contacto`: la ficha de contacto de la cuenta, o `contacto: null` si no tiene (asesor, admin, cliente nuevo). */
+export interface MiContactoResponse {
+  contacto: {
+    nombres: string;
+    apellidos: string;
+    telefono: string;
+    email: string | null;
+    canal: 'LLAMADA' | 'WHATSAPP';
+  } | null;
+}
+
 export interface RegistroMinimoRequest {
   nombres: string;
   apellidos: string;
