@@ -53,7 +53,7 @@ export function Sidebar() {
         </div>
 
         <TooltipProvider delayDuration={200}>
-          <nav className="flex-1 overflow-y-auto px-2 pb-4">
+          <nav className="flex-1 overflow-y-auto px-2 pb-4 [scrollbar-color:rgb(255_255_255/0.3)_transparent] [scrollbar-width:thin]">
             {grupos.map((g) => (
               <div key={g.id} className="mb-2">
                 {g.label && !colapsado ? (
