@@ -4,8 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { PublicLayout } from '../../app-shell/PublicLayout';
+import { CotizarPage } from '../cotizacion/pages/CotizarPage';
 import { server } from '../../test/msw/server';
-import { API } from '../../test/msw/handlers';
+import { API, catalogoCamposMock } from '../../test/msw/handlers';
 import { renderConProviders } from '../../test/render';
 import { useCotizacionTokenStore } from '../../shared/stores/useCotizacionTokenStore';
 import type { RespuestaAsistente } from '../../shared/types/api';
@@ -35,13 +36,13 @@ function Ubicacion() {
   return <p data-testid="ruta">{useLocation().pathname}</p>;
 }
 
-function renderSitio(ruta = '/') {
+function renderSitio(ruta = '/', formularioReal = false) {
   return renderConProviders(
     <>
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<p>portada</p>} />
-          <Route path="/cotizar" element={<p>formulario de cotizar</p>} />
+          <Route path="/cotizar" element={formularioReal ? <CotizarPage /> : <p>formulario de cotizar</p>} />
           <Route path="/cotizacion/:id" element={<p>comparativo</p>} />
           <Route path="/cotizacion/:id/prueba" element={<p>prueba de choque</p>} />
         </Route>
@@ -248,6 +249,35 @@ describe('Asistente (chatbot)', () => {
       expect(borrador.vehiculo).toEqual({ marcaId: 'm1', modeloId: 'mo1', anio: '' }); // RN-44: el año lo elige la persona
       expect(paso).toBe(1);
     });
+
+    it('si ya estás en el formulario de cotizar, "Cotizar con estos datos" lo vuelve a leer y marca el auto', async () => {
+      server.use(
+        http.get(`${API}/catalogo/campos`, () => HttpResponse.json(catalogoCamposMock)),
+        http.get(`${API}/catalogo/vehiculos/marcas`, () => HttpResponse.json([{ id: 'm1', nombre: 'Toyota' }])),
+        http.get(`${API}/catalogo/vehiculos/marcas/m1/modelos`, () => HttpResponse.json([{ id: 'mo1', nombre: 'Hilux', tipo: 'PICKUP' }])),
+        http.get(`${API}/catalogo/vehiculos/modelos/mo1/anios`, () => HttpResponse.json([2015, 2014])),
+        http.post(`${API}/catalogo/vehiculos/reconocer`, () =>
+          HttpResponse.json({
+            reconocido: true,
+            marca: { id: 'm1', nombre: 'Toyota' },
+            modelo: { id: 'mo1', nombre: 'Hilux' },
+            aniosProbables: [2015],
+            confianza: 0.9,
+          }),
+        ),
+      );
+      const user = userEvent.setup();
+      renderSitio('/cotizar', true);
+      await screen.findByRole('option', { name: 'Toyota' }, { timeout: 5000 });
+      expect(screen.getByLabelText(/^marca/i)).toHaveValue('');
+      const ventana = await abrirChat(user);
+      await user.upload(within(ventana).getByLabelText(/foto de tu auto/i), foto());
+      await within(ventana).findByText(/parece un toyota hilux/i);
+      await user.click(within(ventana).getAllByRole('button', { name: 'Cotizar con estos datos' })[0]!);
+      await waitFor(() => expect(screen.getByLabelText(/^marca/i)).toHaveValue('m1'), { timeout: 5000 });
+      await waitFor(() => expect(screen.getByLabelText(/^modelo/i)).toHaveValue('mo1'), { timeout: 5000 });
+      expect(screen.getByLabelText(/^año/i)).toHaveValue(''); // RN-44
+    }, 20_000);
 
     it('si no reconoce el auto, lo dice y ofrece cotizar a mano', async () => {
       server.use(
