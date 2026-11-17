@@ -7,6 +7,7 @@ import { Switch } from '../../../shared/ui/switch';
 import { camposDinamicos } from '../schema/buildZodSchema';
 import type { BorradorCotizar } from '../store/useCotizarWizardStore';
 import { DynamicField } from './DynamicField';
+import { ReconocerVehiculoFoto } from './ReconocerVehiculoFoto';
 import { SelectorVehiculoCascada } from './SelectorVehiculoCascada';
 
 /** Paso 1 · Vehículo: marca → modelo → año en cascada, uso y los campos dinámicos del catálogo (placa, clase). */
@@ -21,6 +22,13 @@ export function PasoVehiculo({ catalogo }: { catalogo: CatalogoCampos }) {
 
   return (
     <>
+      <ReconocerVehiculoFoto
+        onReconocido={(v) => {
+          setValue('vehiculo', v, { shouldDirty: true });
+          clearErrors('vehiculo');
+        }}
+      />
+
       <SelectorVehiculoCascada
         value={vehiculo}
         onChange={(v) => {

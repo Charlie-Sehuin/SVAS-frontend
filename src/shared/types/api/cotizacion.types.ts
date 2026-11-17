@@ -44,6 +44,15 @@ export interface Modelo {
   nombre: string;
   tipo: string;
 }
+/** `POST /catalogo/vehiculos/reconocer`: sugerencia a partir de una foto; el cliente confirma. */
+export interface VehiculoReconocido {
+  reconocido: boolean;
+  marca?: Marca;
+  modelo?: Pick<Modelo, 'id' | 'nombre'>;
+  /** Años del rango estimado que tienen cobertura, del más nuevo al más viejo. */
+  aniosProbables: number[];
+  confianza: number;
+}
 export interface Departamento {
   departamento: string;
 }

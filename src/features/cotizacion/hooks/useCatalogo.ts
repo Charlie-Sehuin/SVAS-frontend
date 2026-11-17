@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { qk } from '../../../shared/lib/query-keys';
 import { STALE } from '../../../shared/lib/query-client';
 import * as catalogo from '../api/catalogo.api';
@@ -26,6 +26,9 @@ export const useAnios = (modeloId: string | null) =>
     enabled: !!modeloId,
     staleTime: STALE.catalogoVehiculos,
   });
+
+/** `POST /catalogo/vehiculos/reconocer`: no se cachea, cada foto es una consulta nueva. */
+export const useReconocerVehiculo = () => useMutation({ mutationFn: catalogo.reconocerVehiculo });
 
 /* Ubicación en cascada: departamento → provincia → distrito (ubigeo de 6 dígitos). */
 export const useDepartamentos = () =>
