@@ -30,6 +30,9 @@ export const useAnios = (modeloId: string | null) =>
 /** `POST /catalogo/vehiculos/reconocer`: no se cachea, cada foto es una consulta nueva. */
 export const useReconocerVehiculo = () => useMutation({ mutationFn: catalogo.reconocerVehiculo });
 
+/** `POST /catalogo/vehiculos/leer-tarjeta`: no se cachea, cada archivo es una consulta nueva. */
+export const useLeerTarjeta = () => useMutation({ mutationFn: catalogo.leerTarjeta });
+
 /* Ubicación en cascada: departamento → provincia → distrito (ubigeo de 6 dígitos). */
 export const useDepartamentos = () =>
   useQuery({ queryKey: qk.catalogo.departamentos, queryFn: catalogo.listarDepartamentos, staleTime: STALE.catalogoVehiculos });

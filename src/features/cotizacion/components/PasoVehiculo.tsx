@@ -7,6 +7,7 @@ import { Switch } from '../../../shared/ui/switch';
 import { camposDinamicos } from '../schema/buildZodSchema';
 import type { BorradorCotizar } from '../store/useCotizarWizardStore';
 import { DynamicField } from './DynamicField';
+import { LeerTarjetaVehiculo } from './LeerTarjetaVehiculo';
 import { ReconocerVehiculoFoto } from './ReconocerVehiculoFoto';
 import { SelectorVehiculoCascada } from './SelectorVehiculoCascada';
 
@@ -22,6 +23,18 @@ export function PasoVehiculo({ catalogo }: { catalogo: CatalogoCampos }) {
 
   return (
     <>
+      <LeerTarjetaVehiculo
+        onLeida={({ vehiculo: v, placa }) => {
+          setValue('vehiculo', v, { shouldDirty: true });
+          clearErrors('vehiculo');
+          if (placa) {
+            setValue('sinPlaca', false, { shouldDirty: true });
+            setValue('placa', placa, { shouldDirty: true });
+            clearErrors('placa');
+          }
+        }}
+      />
+
       <ReconocerVehiculoFoto
         onReconocido={(v) => {
           setValue('vehiculo', v, { shouldDirty: true });

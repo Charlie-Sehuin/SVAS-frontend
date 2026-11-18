@@ -7,6 +7,7 @@ import type {
   Marca,
   Modelo,
   Provincia,
+  TarjetaLeida,
   VehiculoReconocido,
 } from '../../../shared/types/api';
 
@@ -22,6 +23,13 @@ export const reconocerVehiculo = (foto: Blob) => {
   const body = new FormData();
   body.append('foto', foto, 'foto.jpg');
   return api.post('catalogo/vehiculos/reconocer', { body }).json<VehiculoReconocido>();
+};
+
+/** Tarjeta de propiedad (foto o PDF) → marca, modelo, año y placa. Los PDF viajan tal cual. */
+export const leerTarjeta = (archivo: Blob) => {
+  const body = new FormData();
+  body.append('tarjeta', archivo, archivo.type === 'application/pdf' ? 'tarjeta.pdf' : 'tarjeta.jpg');
+  return api.post('catalogo/vehiculos/leer-tarjeta', { body }).json<TarjetaLeida>();
 };
 
 export const listarDepartamentos = () => api.get('catalogo/ubigeos/departamentos').json<Departamento[]>();
