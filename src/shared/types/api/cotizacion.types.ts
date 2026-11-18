@@ -53,6 +53,18 @@ export interface VehiculoReconocido {
   aniosProbables: number[];
   confianza: number;
 }
+/** `POST /catalogo/vehiculos/leer-tarjeta`: datos de la tarjeta de propiedad; el cliente confirma. */
+export interface TarjetaLeida {
+  leida: boolean;
+  marca?: Marca;
+  modelo?: Pick<Modelo, 'id' | 'nombre'>;
+  /** Año de modelo (o el de fabricación si no hay). Solo viene si se pudo leer. */
+  anio?: number;
+  /** Solo si hay modelo y año: si alguna aseguradora cotiza ese año. */
+  anioCotizable?: boolean;
+  /** Ya normalizada: mayúsculas, sin guion. */
+  placa?: string;
+}
 export interface Departamento {
   departamento: string;
 }

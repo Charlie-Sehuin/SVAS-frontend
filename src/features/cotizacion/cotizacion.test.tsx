@@ -525,6 +525,93 @@ describe('Reconocer el auto por foto', () => {
   });
 });
 
+describe('Leer la tarjeta de propiedad', () => {
+  const pdf = () => new File(['%PDF'], 'tarjeta.pdf', { type: 'application/pdf' });
+  const leida = {
+    leida: true,
+    marca: { id: 'm1', nombre: 'Toyota' },
+    modelo: { id: 'mo1', nombre: 'Corolla' },
+    anio: 2022,
+    anioCotizable: true,
+    placa: 'ADQ345',
+  };
+
+  async function subir(respuesta: unknown, init?: { status?: number }, archivo: File = pdf()) {
+    catalogoGeografico();
+    let cuerpo: string | undefined; // tipo de contenido: jsdom no deja leer el cuerpo multipart
+    server.use(
+      http.post(`${API}/catalogo/vehiculos/leer-tarjeta`, async ({ request }) => {
+        cuerpo = request.headers.get('content-type') ?? '';
+        return HttpResponse.json(respuesta as Record<string, unknown>, init);
+      }),
+    );
+    const user = userEvent.setup();
+    renderWizard();
+    await screen.findByRole('option', { name: 'Toyota' }, { timeout: 5000 });
+    await user.upload(screen.getByLabelText(/tarjeta de propiedad/i), archivo);
+    return { user, cuerpo: () => cuerpo };
+  }
+
+  it('rellena marca, modelo, año y placa, y pide revisar', async () => {
+    const { cuerpo } = await subir(leida);
+    expect(await screen.findByText(/leímos tu tarjeta/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(/^marca/i)).toHaveValue('m1'));
+    await waitFor(() => expect(screen.getByLabelText(/^modelo/i)).toHaveValue('mo1'));
+    await waitFor(() => expect(screen.getByLabelText(/^año/i)).toHaveValue('2022'));
+    expect(screen.getByLabelText(/^placa/i)).toHaveValue('ADQ345');
+    // Se envió como multipart (el cuerpo no se puede leer en jsdom).
+    expect(cuerpo()).toMatch(/^multipart\/form-data/);
+  });
+
+  it('si no es una tarjeta, lo dice y no toca el formulario', async () => {
+    await subir({ leida: false });
+    expect(await screen.findByText(/no pudimos leer la tarjeta/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^marca/i)).toHaveValue('');
+  });
+
+  it('año sin cobertura: rellena marca y modelo, deja el año vacío y lo explica', async () => {
+    await subir({ ...leida, anio: 2003, anioCotizable: false });
+    expect(await screen.findByText(/leímos el año 2003/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(/^modelo/i)).toHaveValue('mo1'));
+    expect(screen.getByLabelText(/^año/i)).toHaveValue('');
+  });
+
+  it('modelo fuera del catálogo: rellena la marca y dice que aún no se cotiza', async () => {
+    await subir({ leida: true, marca: { id: 'm1', nombre: 'Toyota' }, anio: 2011, placa: 'ADQ345' });
+    expect(await screen.findByText(/ese modelo aún no lo cotizamos/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(/^marca/i)).toHaveValue('m1'));
+    expect(screen.getByLabelText(/^modelo/i)).toHaveValue('');
+  });
+
+  it('con "No tengo placa" activo, la placa leída lo apaga y rellena el campo', async () => {
+    catalogoGeografico();
+    server.use(http.post(`${API}/catalogo/vehiculos/leer-tarjeta`, () => HttpResponse.json(leida)));
+    const user = userEvent.setup();
+    renderWizard();
+    await screen.findByRole('option', { name: 'Toyota' }, { timeout: 5000 });
+    await user.click(screen.getByRole('switch', { name: /no tengo placa/i }));
+    await user.upload(screen.getByLabelText(/tarjeta de propiedad/i), pdf());
+    await waitFor(() => expect(screen.getByLabelText(/^placa/i)).toHaveValue('ADQ345'));
+    expect(screen.getByLabelText(/^placa/i)).toBeEnabled();
+  });
+
+  it('si el servicio falla, muestra el mensaje del backend y se puede seguir a mano', async () => {
+    await subir(
+      { statusCode: 503, message: 'La lectura de la tarjeta no está disponible por ahora' },
+      { status: 503 },
+    );
+    expect(await screen.findByText(/no está disponible por ahora/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^marca/i)).toBeEnabled();
+  });
+
+  it('un archivo de más de 5 MB no se envía', async () => {
+    const grande = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'tarjeta.pdf', { type: 'application/pdf' });
+    const { cuerpo } = await subir(leida, undefined, grande);
+    expect(await screen.findByText(/pesa más de 5 mb/i)).toBeInTheDocument();
+    expect(cuerpo()).toBeUndefined();
+  });
+});
+
 describe('Comparativo de planes', () => {
   it('ofrece "Editar mis datos" solo si el borrador del formulario es el de esta cotización', async () => {
     servirResumen();
