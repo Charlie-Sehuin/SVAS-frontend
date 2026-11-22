@@ -1,9 +1,9 @@
 import { useContext } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AuthContext, type AuthContextValue } from './AuthProvider';
 import { api } from '../shared/lib/api-client';
 import { qk } from '../shared/lib/query-keys';
-import type { MiContactoResponse, Usuario } from '../shared/types/api/seguridad.types';
+import type { ActualizarContactoRequest, MiContactoResponse, Usuario } from '../shared/types/api/seguridad.types';
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
@@ -22,6 +22,19 @@ export function useMiContacto() {
     queryFn: () => api.get('usuarios/me/contacto').json<MiContactoResponse>(),
     enabled: estado === 'autenticado',
     staleTime: 5 * 60_000,
+  });
+}
+
+/**
+ * `PATCH /usuarios/me/contacto`: cambia el celular y/o el canal. El backend responde con la ficha ya guardada y esa
+ * respuesta reemplaza la caché, así el cotizador (que prellena con ella) ve el dato nuevo sin otra petición.
+ */
+export function useActualizarMiContacto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (cambios: ActualizarContactoRequest) =>
+      api.patch('usuarios/me/contacto', { json: cambios }).json<{ contacto: NonNullable<MiContactoResponse['contacto']> }>(),
+    onSuccess: (r) => qc.setQueryData<MiContactoResponse>(qk.usuario.contacto, { contacto: r.contacto }),
   });
 }
 
