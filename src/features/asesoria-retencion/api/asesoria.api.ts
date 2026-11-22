@@ -16,6 +16,7 @@ import type {
   SolicitudCreada,
   SolicitudDetalle,
   SolicitudEnCola,
+  SolicitudMia,
   TomarSolicitudResponse,
 } from '../../../shared/types/api';
 import type { EstadoSeguimiento, EstadoSolicitudAsesoria, OrigenCaso } from '../../../shared/types/enums';
@@ -26,6 +27,9 @@ import type { EstadoSeguimiento, EstadoSolicitudAsesoria, OrigenCaso } from '../
 
 /** El CLIENTE dueño de la cotización pide hablar con un asesor. */
 export const solicitarAsesoria = (body: SolicitarAsesoriaRequest) => api.post('asesorias', { json: body }).json<SolicitudCreada>();
+
+/** Las solicitudes del propio cliente, la más reciente primero. */
+export const listarMisAsesorias = () => api.get('asesorias/mias').json<SolicitudMia[]>();
 
 /* ───────────── Asesor (CU-03) ───────────── */
 

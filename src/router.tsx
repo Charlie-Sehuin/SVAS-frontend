@@ -52,6 +52,9 @@ const ConfirmacionPage = lazy(() =>
 const InicioCuentaPage = lazy(() =>
   import('./features/cotizacion/pages/InicioCuentaPage').then((m) => ({ default: m.InicioCuentaPage })),
 );
+const MisAsesoriasPage = lazy(() =>
+  import('./features/asesoria-retencion/cliente/MisAsesoriasPage').then((m) => ({ default: m.MisAsesoriasPage })),
+);
 const PerfilCuentaPage = lazy(() =>
   import('./features/cotizacion/pages/PerfilCuentaPage').then((m) => ({ default: m.PerfilCuentaPage })),
 );
@@ -132,6 +135,7 @@ export const router = createBrowserRouter([
           { path: '/mi-cuenta', element: lazyPage(<InicioCuentaPage />) },
           { path: '/mi-cuenta/cotizaciones', element: lazyPage(<MisCotizacionesPage />) },
           { path: '/mi-cuenta/polizas', element: lazyPage(<MisPolizasPage />) },
+          { path: '/mi-cuenta/asesorias', element: lazyPage(<MisAsesoriasPage />) },
           { path: '/mi-cuenta/perfil', element: lazyPage(<PerfilCuentaPage />) },
         ],
       },

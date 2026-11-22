@@ -36,6 +36,23 @@ export interface SolicitudCreada {
   fechaCreacion: FechaIso;
 }
 
+/**
+ * Fila de `GET /asesorias/mias` (CLIENTE): lo que el cliente ve de sus solicitudes. No trae el nombre del asesor
+ * ni la nota con la que cerró el caso; `conAsesor` solo dice si ya la tomó alguien.
+ */
+export interface SolicitudMia {
+  id: Uuid;
+  motivo: MotivoAsesoria;
+  estado: EstadoSolicitudAsesoria;
+  canal: CanalContacto;
+  origen: OrigenCaso;
+  fechaCreacion: FechaIso;
+  conAsesor: boolean;
+  cotizacion: { id: Uuid; fecha: FechaIso; estado: EstadoCotizacion; vehiculo: string };
+  /** El descuento vigente de esa cotización (RN-09), si lo hay. */
+  descuentoAceptado: { tipo: TipoDescuento; porcentaje: Monto } | null;
+}
+
 export interface CotizacionDelCaso {
   id: Uuid;
   fecha: FechaIso;

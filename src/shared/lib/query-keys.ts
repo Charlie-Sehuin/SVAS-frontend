@@ -42,6 +42,7 @@ export const qk = {
   polizas: { mias: ['polizas', 'mias'] as const },
 
   asesorias: {
+    mias: ['asesorias', 'mias'] as const,
     cola: (filtros: Record<string, string | undefined> = {}) => ['asesorias', 'cola', filtros] as const,
     detalle: (id: string) => ['asesorias', id] as const,
   },
