@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { formatearFecha } from '../../../shared/lib/format';
 import { Button } from '../../../shared/ui/button';
@@ -10,11 +11,18 @@ import { Badge } from '../../../shared/ui/badge';
 import { MiCuentaTabs } from '../../cotizacion/pages/MisCotizacionesPage';
 import { BotonDescargarPoliza } from '../components/BotonDescargarPoliza';
 import { ContenidoContratado } from '../components/ContenidoContratado';
+import { CuotasPoliza } from '../components/CuotasPoliza';
 import { useMisPolizas } from '../hooks/useCompra';
 
 /** `/mi-cuenta/polizas` (CLIENTE): cada póliza es una tarjeta con su estado y una acción principal (diseño §9.9). */
 export function MisPolizasPage() {
   const { data, isLoading, isError, error, refetch } = useMisPolizas();
+  const { hash } = useLocation();
+
+  // Venir desde un aviso de la campanita (`#poliza-<id>`): se baja a esa póliza cuando ya están pintadas.
+  useEffect(() => {
+    if (data && hash) document.getElementById(hash.slice(1))?.scrollIntoView?.({ block: 'start' });
+  }, [data, hash]);
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-6 lg:py-10">
@@ -42,7 +50,7 @@ export function MisPolizasPage() {
       ) : (
         <ul className="space-y-3">
           {data?.map((p) => (
-            <li key={p.id}>
+            <li key={p.id} id={`poliza-${p.id}`} className="scroll-mt-24">
               <Card className="p-4">
                 <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
                   <div className="min-w-0 flex-1">
@@ -78,6 +86,8 @@ export function MisPolizasPage() {
                     </dd>
                   </div>
                 </dl>
+
+                {p.pago?.modo === 'CUOTAS' ? <CuotasPoliza poliza={{ ordenId: p.ordenId, numero: p.numero, pago: p.pago }} /> : null}
 
                 <BotonDescargarPoliza polizaId={p.id} numero={p.numero} size="md" className="mt-4" generando={!p.pdfDisponible} />
 

@@ -162,9 +162,38 @@ export interface PagoResponse {
 
 /* ───────────── Pólizas ───────────── */
 
+/**
+ * Una cuota en `GET /polizas/mias` y en la respuesta de pagar cuotas. Los dos datos de ayuda vienen del backend y
+ * solo en las PENDIENTES, para que el navegador no calcule dinero ni fechas:
+ *  - `diasParaVencer`: 0 = vence hoy, negativo = ya venció.
+ *  - `montoAcumulado`: lo que cuesta pagar hasta esta cuota inclusive (las pendientes, en orden).
+ */
+export interface CuotaResumen {
+  numero: number;
+  monto: Monto;
+  /** YYYY-MM-DD */
+  fechaVencimiento: string;
+  estado: EstadoPago;
+  diasParaVencer: number | null;
+  montoAcumulado: Monto | null;
+}
+
+/** `POST /compras/:ordenId/cuotas/pago` (201): lo cobrado y el cronograma ya actualizado. */
+export interface PagarCuotasResponse {
+  pago: {
+    referencia: string;
+    montoPagado: Monto;
+    cuotasPagadas: number[];
+    cuotasPendientes: number;
+    cuotas: CuotaResumen[];
+  };
+}
+
 /** Fila de `GET /polizas/mias`. */
 export interface PolizaResumen {
   id: Uuid;
+  /** La compra de esta póliza: con ella se pagan las cuotas. */
+  ordenId: Uuid;
   numero: string;
   fechaEmision: FechaIso;
   aseguradora: string;
@@ -172,7 +201,7 @@ export interface PolizaResumen {
   vehiculo: { marca: string; modelo: string; anio: number; placa: string | null };
   sumaAsegurada: Monto;
   primaFinal: Monto;
-  pago: { modo: ModoPago; montoTotal: Monto; numeroCuotas: number | null } | null;
+  pago: { modo: ModoPago; montoTotal: Monto; numeroCuotas: number | null; cuotas: CuotaResumen[] } | null;
   pdfDisponible: boolean;
   contenidoPlan: ContenidoPlanContratado;
 }

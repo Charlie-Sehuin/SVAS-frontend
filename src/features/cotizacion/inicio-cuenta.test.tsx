@@ -10,6 +10,7 @@ import { InicioCuentaPage } from './pages/InicioCuentaPage';
 const poliza = (extra: Partial<PolizaResumen> = {}): PolizaResumen =>
   ({
     id: 'p1',
+    ordenId: 'o1',
     numero: 'LAP-2026-A1B2C3D4',
     fechaEmision: '2026-11-12T15:00:00-05:00',
     aseguradora: 'La Positiva',
@@ -17,7 +18,7 @@ const poliza = (extra: Partial<PolizaResumen> = {}): PolizaResumen =>
     vehiculo: { marca: 'Toyota', modelo: 'Corolla', anio: 2022, placa: 'ABC-123' },
     sumaAsegurada: '15000.00',
     primaFinal: '619.20',
-    pago: { modo: 'UNICO', montoTotal: '619.20', numeroCuotas: null },
+    pago: { modo: 'UNICO', montoTotal: '619.20', numeroCuotas: null, cuotas: [] },
     pdfDisponible: true,
     contenidoPlan: {},
     ...extra,
@@ -60,7 +61,7 @@ describe('Inicio de Mi cuenta', () => {
   });
 
   it('muestra cada póliza con su número, forma de pago y descarga, y cada cotización pendiente con "Continuar"', async () => {
-    dar([poliza({ pago: { modo: 'CUOTAS', montoTotal: '650.16', numeroCuotas: 12 } })], [cotizacion('c1', 'REGISTRADA')]);
+    dar([poliza({ pago: { modo: 'CUOTAS', montoTotal: '650.16', numeroCuotas: 12, cuotas: [] } })], [cotizacion('c1', 'REGISTRADA')]);
     render();
 
     expect(await screen.findByText('Plan Full')).toBeInTheDocument();
@@ -70,6 +71,40 @@ describe('Inicio de Mi cuenta', () => {
     expect(screen.getByRole('button', { name: 'Descargar mi póliza (PDF)' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'Continuar' })).toHaveAttribute('href', '/cotizacion/c1');
     expect(screen.getByRole('link', { name: 'Cotizar ahora' })).toHaveAttribute('href', '/cotizar');
+  });
+
+  it('una póliza en cuotas muestra la próxima cuota con cuándo vence y lleva a pagarla', async () => {
+    const cuotas = [
+      { numero: 1, monto: '54.18', fechaVencimiento: '2026-11-12', estado: 'CONFIRMADO' as const, diasParaVencer: null, montoAcumulado: null },
+      { numero: 2, monto: '54.18', fechaVencimiento: '2026-12-12', estado: 'PENDIENTE' as const, diasParaVencer: 3, montoAcumulado: '54.18' },
+      { numero: 3, monto: '54.18', fechaVencimiento: '2027-01-12', estado: 'PENDIENTE' as const, diasParaVencer: 34, montoAcumulado: '108.36' },
+    ];
+    dar([poliza({ pago: { modo: 'CUOTAS', montoTotal: '162.54', numeroCuotas: 3, cuotas } })], []);
+    render();
+
+    expect(await screen.findByText(/Próxima cuota: 2/)).toBeInTheDocument();
+    expect(screen.getByText(/vence en 3 días/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Pagar cuotas' })).toHaveAttribute('href', '/mi-cuenta/polizas#poliza-p1');
+  });
+
+  it('una cuota vencida se rotula como vencida', async () => {
+    const cuotas = [
+      { numero: 2, monto: '54.18', fechaVencimiento: '2026-11-01', estado: 'PENDIENTE' as const, diasParaVencer: -5, montoAcumulado: '54.18' },
+    ];
+    dar([poliza({ pago: { modo: 'CUOTAS', montoTotal: '108.36', numeroCuotas: 2, cuotas } })], []);
+    render();
+
+    expect(await screen.findByText(/Cuota vencida: 2/)).toBeInTheDocument();
+    expect(screen.getByText(/venció hace 5 días/)).toBeInTheDocument();
+  });
+
+  it('una póliza al contado no muestra cuotas', async () => {
+    dar([poliza()], []);
+    render();
+
+    expect(await screen.findByText('Plan Full')).toBeInTheDocument();
+    expect(screen.queryByText(/Próxima cuota/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Pagar cuotas' })).not.toBeInTheDocument();
   });
 
   it('muestra solo las primeras tres de cada lista', async () => {

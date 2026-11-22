@@ -6,6 +6,7 @@ import type {
   DatosCompraResponse,
   DescargaPdf,
   EstadoCompra,
+  PagarCuotasResponse,
   PagarRequest,
   PagoResponse,
   PolizaResumen,
@@ -59,3 +60,12 @@ export async function descargarPdfPoliza(polizaId: string, respaldo = 'poliza.pd
   }
   return { listo: true, blob: await res.blob(), nombreArchivo: nombreDesdeCabecera(res.headers.get('Content-Disposition'), respaldo) };
 }
+
+/**
+ * Paga las SIGUIENTES `cantidad` cuotas pendientes de una compra, siempre en orden (1 = la próxima, todas = las que
+ * queden). Misma regla de `Idempotency-Key` que el pago de la compra: repetirla no cobra dos veces.
+ */
+export const pagarCuotas = (ordenId: string, cantidad: number, idempotencyKey: string) =>
+  api
+    .post(`compras/${ordenId}/cuotas/pago`, { json: { cantidad }, headers: { 'Idempotency-Key': idempotencyKey } })
+    .json<PagarCuotasResponse>();

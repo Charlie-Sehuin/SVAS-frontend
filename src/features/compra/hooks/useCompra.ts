@@ -76,6 +76,21 @@ export function usePagar(ordenId: string) {
   });
 }
 
+/**
+ * `POST /compras/:ordenId/cuotas/pago`. Sin reintento automático: lo repite la persona con la misma `Idempotency-Key`.
+ * Al terminar se refresca "Mis pólizas" (cronograma, campanita e inicio salen de ahí).
+ */
+export function usePagarCuotas(ordenId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { cantidad: number; idempotencyKey: string }) => compraApi.pagarCuotas(ordenId, v.cantidad, v.idempotencyKey),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.polizas.mias });
+      void qc.invalidateQueries({ queryKey: qk.compra.estado(ordenId) });
+    },
+  });
+}
+
 export const useEstadoCompra = (ordenId: string | undefined) =>
   useQuery({
     queryKey: qk.compra.estado(ordenId ?? ''),

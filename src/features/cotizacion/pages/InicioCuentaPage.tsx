@@ -10,6 +10,8 @@ import { Skeleton } from '../../../shared/ui/skeleton';
 import { EstadoError } from '../../../shared/ui/domain/EstadoVacio';
 import { MoneyValue } from '../../../shared/ui/domain/MoneyValue';
 import { StatusBadge } from '../../../shared/ui/domain/StatusBadge';
+import type { CuotaResumen, PolizaResumen } from '../../../shared/types/api';
+import { cuandoVence } from '../../compra/lib/avisos';
 import { BotonDescargarPoliza } from '../../compra/components/BotonDescargarPoliza';
 import { useMisPolizas } from '../../compra/hooks/useCompra';
 import { useMisCotizaciones } from '../hooks/useCotizacion';
@@ -17,6 +19,27 @@ import { MiCuentaTabs } from './MisCotizacionesPage';
 
 /** Cuántas filas de cada lista caben en el inicio; el resto se ve en su pestaña. */
 const MAX_FILAS = 3;
+
+/** La primera cuota pendiente de una póliza pagada en cuotas (se pagan en orden). */
+const siguienteCuota = (p: PolizaResumen) =>
+  (p.pago?.cuotas ?? []).filter((c) => c.estado === 'PENDIENTE').sort((a, b) => a.numero - b.numero)[0] ?? null;
+
+function ProximaCuota({ poliza, cuota }: { poliza: PolizaResumen; cuota: CuotaResumen }) {
+  const vencida = (cuota.diasParaVencer ?? 0) < 0;
+  return (
+    <div
+      className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg p-3 text-small text-ink ${vencida ? 'bg-status-danger/10' : 'bg-status-warning/15'}`}
+    >
+      <p className="min-w-0 flex-1">
+        <span className="font-bold">{vencida ? 'Cuota vencida' : 'Próxima cuota'}: {cuota.numero}</span> · <MoneyValue value={cuota.monto} />
+        {cuota.diasParaVencer !== null ? ` · ${cuandoVence(cuota.diasParaVencer)}` : ''}
+      </p>
+      <Button size="sm" asChild>
+        <Link to={`/mi-cuenta/polizas#poliza-${poliza.id}`}>Pagar cuotas</Link>
+      </Button>
+    </div>
+  );
+}
 
 /** Primer nombre para saludar. `nombre` viene de `user_metadata.full_name` y puede faltar. */
 const primerNombre = (nombre: string | null) => nombre?.trim().split(/\s+/)[0] || null;
@@ -135,6 +158,7 @@ export function InicioCuentaPage() {
                         <dd>{p.pago?.modo === 'CUOTAS' ? `En ${p.pago.numeroCuotas ?? ''} cuotas` : 'Pago único'}</dd>
                       </div>
                     </dl>
+                    {siguienteCuota(p) ? <ProximaCuota poliza={p} cuota={siguienteCuota(p)!} /> : null}
                     <BotonDescargarPoliza
                       polizaId={p.id}
                       numero={p.numero}
