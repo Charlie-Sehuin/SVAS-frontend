@@ -22,6 +22,12 @@ export interface MiContactoResponse {
   } | null;
 }
 
+/** `PATCH /usuarios/me/contacto`: al menos uno de los dos. El correo, los nombres y el documento no se pueden cambiar por aquí. */
+export interface ActualizarContactoRequest {
+  telefono?: string;
+  canal?: 'LLAMADA' | 'WHATSAPP';
+}
+
 export interface RegistroMinimoRequest {
   nombres: string;
   apellidos: string;

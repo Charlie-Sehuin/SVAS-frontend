@@ -237,6 +237,9 @@ function MenuCuenta({ variante }: { variante: 'claro' | 'oscuro' }) {
             <DropdownMenuItem asChild>
               <Link to="/mi-cuenta/polizas">Mis pólizas</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/mi-cuenta/perfil">Mis datos</Link>
+            </DropdownMenuItem>
           </>
         )}
         <DropdownMenuSeparator />
