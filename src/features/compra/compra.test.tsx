@@ -621,6 +621,7 @@ describe('ConfirmacionPage', () => {
 
 const polizaMock = (extra: Partial<PolizaResumen> = {}): PolizaResumen => ({
   id: POLIZA,
+  ordenId: ORDEN,
   numero: 'LAP-2026-A1B2C3D4',
   fechaEmision: '2026-11-12T15:00:00-05:00',
   aseguradora: 'La Positiva',
@@ -628,7 +629,7 @@ const polizaMock = (extra: Partial<PolizaResumen> = {}): PolizaResumen => ({
   vehiculo: { marca: 'Toyota', modelo: 'Corolla', anio: 2022, placa: 'ABC-123' },
   sumaAsegurada: '15000.00',
   primaFinal: '619.20',
-  pago: { modo: 'UNICO', montoTotal: '619.20', numeroCuotas: null },
+  pago: { modo: 'UNICO', montoTotal: '619.20', numeroCuotas: null, cuotas: [] },
   pdfDisponible: true,
   contenidoPlan: contenidoMock,
   ...extra,
@@ -648,7 +649,7 @@ describe('MisPolizasPage', () => {
   });
 
   it('en cuotas rotula el total con el número de cuotas', async () => {
-    server.use(http.get(`${API}/polizas/mias`, () => HttpResponse.json([polizaMock({ pago: { modo: 'CUOTAS', montoTotal: '650.16', numeroCuotas: 12 } })])));
+    server.use(http.get(`${API}/polizas/mias`, () => HttpResponse.json([polizaMock({ pago: { modo: 'CUOTAS', montoTotal: '650.16', numeroCuotas: 12, cuotas: [] } })])));
     renderConProviders(<MisPolizasPage />, { roles: ['CLIENTE'], ruta: '/mi-cuenta/polizas' });
     expect(await screen.findByText('Total del plan de 12 cuotas')).toBeInTheDocument();
     expect(screen.getByLabelText('650 dólares con 16 centavos')).toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { CampanaAvisos } from './CampanaAvisos';
 import { lazy, Suspense, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Headset, KeyRound, LogOut, Menu, Phone, User } from 'lucide-react';
@@ -206,6 +207,7 @@ function MenuCuenta({ variante }: { variante: 'claro' | 'oscuro' }) {
   const esInterno = roles.includes('ASESOR') || roles.includes('ADMINISTRADOR');
   return (
     <>
+    <CampanaAvisos variante={variante} />
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
