@@ -229,6 +229,9 @@ function MenuCuenta({ variante }: { variante: 'claro' | 'oscuro' }) {
         ) : (
           <>
             <DropdownMenuItem asChild>
+              <Link to="/mi-cuenta">Inicio de mi cuenta</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link to="/mi-cuenta/cotizaciones">Mis cotizaciones</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

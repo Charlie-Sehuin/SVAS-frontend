@@ -79,6 +79,11 @@ export function LoginPage() {
               <LogIn aria-hidden /> Entrar
             </Button>
           </form>
+          <p className="mt-4 text-center text-small">
+            <Link to="/recuperar" className="inline-flex min-h-11 items-center font-bold text-brand-600 underline-offset-4 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
 
           {from?.startsWith('/compra') ? (
             // Quien llegó desde "Comprar" y aún no tiene cuenta no debe quedarse sin salida: vuelve a la compra, donde se registra.

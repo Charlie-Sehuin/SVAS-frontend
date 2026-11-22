@@ -14,6 +14,12 @@ import { Skeleton } from './shared/ui/skeleton';
  */
 const LandingPage = lazy(() => import('./features/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('./auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RecuperarPasswordPage = lazy(() =>
+  import('./auth/RecuperarPasswordPage').then((m) => ({ default: m.RecuperarPasswordPage })),
+);
+const RestablecerPasswordPage = lazy(() =>
+  import('./auth/RestablecerPasswordPage').then((m) => ({ default: m.RestablecerPasswordPage })),
+);
 
 /* Ola 1 · cotizar y comparar. El embudo carga solo lo suyo: cada pantalla en su propio chunk. */
 const CotizarPage = lazy(() => import('./features/cotizacion/pages/CotizarPage').then((m) => ({ default: m.CotizarPage })));
@@ -42,6 +48,9 @@ const PruebaChoquePage = lazy(() =>
 );
 const ConfirmacionPage = lazy(() =>
   import('./features/compra/pages/ConfirmacionPage').then((m) => ({ default: m.ConfirmacionPage })),
+);
+const InicioCuentaPage = lazy(() =>
+  import('./features/cotizacion/pages/InicioCuentaPage').then((m) => ({ default: m.InicioCuentaPage })),
 );
 const MisPolizasPage = lazy(() => import('./features/compra/pages/MisPolizasPage').then((m) => ({ default: m.MisPolizasPage })));
 const MisCotizacionesPage = lazy(() =>
@@ -117,7 +126,7 @@ export const router = createBrowserRouter([
         element: <RoleGuard roles={['CLIENTE']} />,
         children: [
           { path: '/compra/:id/listo', element: lazyPage(<ConfirmacionPage />) },
-          { path: '/mi-cuenta', element: <Navigate to="/mi-cuenta/cotizaciones" replace /> },
+          { path: '/mi-cuenta', element: lazyPage(<InicioCuentaPage />) },
           { path: '/mi-cuenta/cotizaciones', element: lazyPage(<MisCotizacionesPage />) },
           { path: '/mi-cuenta/polizas', element: lazyPage(<MisPolizasPage />) },
         ],
@@ -127,6 +136,8 @@ export const router = createBrowserRouter([
   },
 
   { path: '/login', element: lazyPage(<LoginPage />) },
+  { path: '/recuperar', element: lazyPage(<RecuperarPasswordPage />) },
+  { path: '/restablecer', element: lazyPage(<RestablecerPasswordPage />) },
 
   /* ───────── Backoffice (BackofficeLayout) ───────── */
   {

@@ -26,6 +26,9 @@ export function renderConProviders(
     signIn: async () => ({ roles }),
     signOut: async () => {},
     cambiarPassword: async () => {},
+    enviarRecuperacion: async () => {},
+    abrirRecuperacion: async () => 'lista',
+    restablecerPassword: async () => {},
     ...authExtra,
   };
   const Wrapper = ({ children }: { children: ReactNode }) => (
