@@ -19,6 +19,9 @@ export function MiCuentaTabs() {
     );
   return (
     <nav aria-label="Mi cuenta" className="mb-6 flex border-b border-line">
+      <NavLink to="/mi-cuenta" end className={tab}>
+        Inicio
+      </NavLink>
       <NavLink to="/mi-cuenta/cotizaciones" className={tab}>
         Mis cotizaciones
       </NavLink>

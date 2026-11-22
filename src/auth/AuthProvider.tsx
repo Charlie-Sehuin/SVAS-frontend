@@ -26,6 +26,18 @@ export interface AuthContextValue {
    * Lanza `Error` con un mensaje en lenguaje llano.
    */
   cambiarPassword: (actual: string, nueva: string) => Promise<void>;
+  /**
+   * "Olvidé mi contraseña": pide a Supabase que envíe el enlace. Responde igual exista o no la cuenta (no se
+   * revela qué correos están registrados). Lanza `Error` solo ante fallos de red o límite de envíos.
+   */
+  enviarRecuperacion: (email: string) => Promise<void>;
+  /**
+   * Abre la sesión de recuperación con los datos del enlace del correo (`window.location.hash`).
+   * `lista` = ya se puede escribir la contraseña nueva; `vencida` = el enlace caducó o ya se usó; `invalida` = no es un enlace de recuperación.
+   */
+  abrirRecuperacion: (hash: string) => Promise<'lista' | 'vencida' | 'invalida'>;
+  /** Fija la contraseña nueva dentro de una sesión de recuperación (no pide la actual: es lo que se olvidó). */
+  restablecerPassword: (nueva: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -100,6 +112,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw new Error(traducirErrorPassword(error, 'nueva'));
   }, []);
 
+  const enviarRecuperacion = useCallback(async (email: string) => {
+    const supabase = await getSupabase();
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/restablecer`,
+    });
+    if (error) throw new Error(traducirErrorRecuperacion(error.message));
+  }, []);
+
+  const abrirRecuperacion = useCallback(async (hash: string) => {
+    const enlace = leerEnlaceRecuperacion(hash);
+    if (enlace.tipo !== 'recuperacion') return enlace.tipo === 'vencido' ? 'vencida' : 'invalida';
+    const supabase = await getSupabase();
+    const { error } = await supabase.auth.setSession({ access_token: enlace.accessToken, refresh_token: enlace.refreshToken });
+    return error ? 'vencida' : 'lista';
+  }, []);
+
+  const restablecerPassword = useCallback(async (nueva: string) => {
+    const supabase = await getSupabase();
+    const { error } = await supabase.auth.updateUser({ password: nueva });
+    if (error) throw new Error(traducirErrorPassword(error, 'nueva'));
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => {
     const meta = session?.user.user_metadata as { full_name?: unknown } | undefined;
     return {
@@ -111,8 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       cambiarPassword,
+      enviarRecuperacion,
+      abrirRecuperacion,
+      restablecerPassword,
     };
-  }, [estado, session, signIn, signOut, cambiarPassword]);
+  }, [estado, session, signIn, signOut, cambiarPassword, enviarRecuperacion, abrirRecuperacion, restablecerPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -142,4 +179,30 @@ function traducirErrorAuth(mensaje: string): string {
   if (m.includes('rate limit') || m.includes('too many')) return 'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
   if (m.includes('banned') || m.includes('disabled')) return 'Tu usuario está desactivado. Contacta al administrador.';
   return 'No pudimos iniciar sesión. Inténtalo de nuevo.';
+}
+
+export type EnlaceRecuperacion =
+  | { tipo: 'recuperacion'; accessToken: string; refreshToken: string }
+  | { tipo: 'vencido' }
+  | { tipo: 'ninguno' };
+
+/**
+ * Lee el `#fragmento` del enlace que manda Supabase. Con éxito trae `access_token`, `refresh_token` y `type=recovery`;
+ * si el enlace caducó o ya se usó, trae `error` / `error_code` (p. ej. `otp_expired`). Cualquier otra cosa no es de recuperación.
+ */
+export function leerEnlaceRecuperacion(hash: string): EnlaceRecuperacion {
+  const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+  if (params.get('error') || params.get('error_code')) return { tipo: 'vencido' };
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (params.get('type') === 'recovery' && accessToken && refreshToken) return { tipo: 'recuperacion', accessToken, refreshToken };
+  return { tipo: 'ninguno' };
+}
+
+function traducirErrorRecuperacion(mensaje: string): string {
+  const m = mensaje.toLowerCase();
+  if (m.includes('rate limit') || m.includes('too many') || m.includes('security purposes')) {
+    return 'Pediste el enlace hace muy poco. Espera un minuto y vuelve a intentarlo.';
+  }
+  return 'No pudimos enviar el enlace. Inténtalo de nuevo en un momento.';
 }
