@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../../auth/useAuth';
 import { qk } from '../../../shared/lib/query-keys';
 import { STALE } from '../../../shared/lib/query-client';
 import * as api from '../api/asesoria.api';
@@ -9,9 +10,21 @@ export function useSolicitarAsesoria() {
   return useMutation({
     mutationFn: api.solicitarAsesoria,
     onSuccess: () => {
-      // Si el mismo usuario ve la cola (p. ej. en pruebas), se actualiza.
+      // Si el mismo usuario ve la cola (p. ej. en pruebas), se actualiza; y "Mis asesorías" muestra la nueva.
       void qc.invalidateQueries({ queryKey: ['asesorias', 'cola'] });
+      void qc.invalidateQueries({ queryKey: qk.asesorias.mias });
     },
+  });
+}
+
+/** `GET /asesorias/mias`: las solicitudes del CLIENTE con sesión. Se refresca al volver a la pestaña (el estado cambia solo). */
+export function useMisAsesorias() {
+  const { estado, roles } = useAuth();
+  return useQuery({
+    queryKey: qk.asesorias.mias,
+    queryFn: api.listarMisAsesorias,
+    enabled: estado === 'autenticado' && roles.includes('CLIENTE'),
+    staleTime: STALE.colas,
   });
 }
 
