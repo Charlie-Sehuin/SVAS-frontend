@@ -66,3 +66,14 @@ export function useMisCotizaciones() {
     enabled: estado === 'autenticado' && roles.includes('CLIENTE'),
   });
 }
+
+/** `GET /vehiculos/mios`: los autos del CLIENTE con sesión. Casi no cambian entre visitas: 5 minutos de caché. */
+export function useMisVehiculos() {
+  const { estado, roles } = useAuth();
+  return useQuery({
+    queryKey: qk.vehiculos.mios,
+    queryFn: cotizacionApi.listarMisVehiculos,
+    enabled: estado === 'autenticado' && roles.includes('CLIENTE'),
+    staleTime: 5 * 60_000,
+  });
+}

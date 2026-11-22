@@ -5,6 +5,7 @@ import type {
   CrearCotizacionResponse,
   MiCotizacion,
   ResumenCotizacionResponse,
+  VehiculoGuardado,
 } from '../../../shared/types/api';
 
 /** Funciones puras sobre `api-client` (arquitectura §6.7). El frontend nunca calcula una prima: pide y pinta. */
@@ -24,3 +25,6 @@ export const actualizarSuma = (id: string, aseguradoraId: string, sumaAsegurada:
 
 /** Cotizaciones del CLIENTE con sesión. */
 export const listarMisCotizaciones = () => api.get('cotizaciones/mias').json<MiCotizacion[]>();
+
+/** Los autos que la persona ya cotizó, uno por auto, el más reciente primero. */
+export const listarMisVehiculos = () => api.get('vehiculos/mios').json<VehiculoGuardado[]>();

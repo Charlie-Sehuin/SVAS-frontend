@@ -171,6 +171,27 @@ export interface ActualizarSumaResponse {
   warning?: Warning;
 }
 
+/**
+ * Fila de `GET /vehiculos/mios` (CLIENTE): un auto que la persona ya cotizó. Si lo cotizó varias veces sale una sola vez,
+ * con los datos de la cotización más reciente. Con esto no vuelve a escribirlos al cotizar de nuevo.
+ */
+export interface VehiculoGuardado {
+  /** Identifica al auto entre cotizaciones (no es un id de la base). */
+  clave: string;
+  marca: { id: Uuid; nombre: string };
+  modelo: { id: Uuid; nombre: string };
+  anio: number;
+  placa: string | null;
+  clase: string | null;
+  uso: UsoVehiculo;
+  ubicacion: { ubigeo: string; departamento: string; provincia: string; distrito: string } | null;
+  /** Cuántas veces se cotizó. */
+  cotizaciones: number;
+  ultimaCotizacion: FechaIso;
+  /** Tiene una cotización convertida en póliza. */
+  asegurado: boolean;
+}
+
 /** `GET /cotizaciones/mias` (CLIENTE). */
 export interface MiCotizacion {
   id: Uuid;

@@ -28,6 +28,9 @@ export function MiCuentaTabs() {
       <NavLink to="/mi-cuenta/polizas" className={tab}>
         Mis pólizas
       </NavLink>
+      <NavLink to="/mi-cuenta/vehiculos" className={tab}>
+        Mis vehículos
+      </NavLink>
       <NavLink to="/mi-cuenta/asesorias" className={tab}>
         Mis asesorías
       </NavLink>

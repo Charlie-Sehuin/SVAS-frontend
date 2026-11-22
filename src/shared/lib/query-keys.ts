@@ -22,6 +22,8 @@ export const qk = {
     mias: ['cotizacion', 'mias'] as const,
   },
 
+  vehiculos: { mios: ['vehiculos', 'mios'] as const },
+
   planes: {
     contenido: (planId: string) => ['planes', 'contenido', planId] as const,
     comparar: (ids: string[]) => ['planes', 'comparar', [...ids].sort().join(',')] as const,

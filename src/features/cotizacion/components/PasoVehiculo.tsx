@@ -10,6 +10,8 @@ import { DynamicField } from './DynamicField';
 import { LeerTarjetaVehiculo } from './LeerTarjetaVehiculo';
 import { ReconocerVehiculoFoto } from './ReconocerVehiculoFoto';
 import { SelectorVehiculoCascada } from './SelectorVehiculoCascada';
+import { UsarMisVehiculos } from './UsarMisVehiculos';
+import { vehiculoABorrador } from '../lib/vehiculoABorrador';
 
 /** Paso 1 · Vehículo: marca → modelo → año en cascada, uso y los campos dinámicos del catálogo (placa, clase). */
 export function PasoVehiculo({ catalogo }: { catalogo: CatalogoCampos }) {
@@ -23,6 +25,19 @@ export function PasoVehiculo({ catalogo }: { catalogo: CatalogoCampos }) {
 
   return (
     <>
+      <UsarMisVehiculos
+        onElegir={(auto) => {
+          const d = vehiculoABorrador(auto);
+          setValue('vehiculo', d.vehiculo, { shouldDirty: true });
+          setValue('uso', d.uso, { shouldDirty: true });
+          setValue('placa', d.placa, { shouldDirty: true });
+          setValue('sinPlaca', d.sinPlaca, { shouldDirty: true });
+          setValue('clase', d.clase, { shouldDirty: true });
+          setValue('ubicacion', d.ubicacion, { shouldDirty: true });
+          clearErrors(['vehiculo', 'uso', 'placa', 'clase', 'ubicacion']);
+        }}
+      />
+
       <LeerTarjetaVehiculo
         onLeida={({ vehiculo: v, placa }) => {
           setValue('vehiculo', v, { shouldDirty: true });
