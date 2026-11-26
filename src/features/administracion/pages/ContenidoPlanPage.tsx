@@ -14,6 +14,7 @@ import { Skeleton } from '../../../shared/ui/skeleton';
 import { EstadoError } from '../../../shared/ui/domain/EstadoVacio';
 import { PageHeader } from '../../../shared/ui/domain/PageHeader';
 import { ErrorToast, SuccessToast, WarningToast } from '../../../shared/ui/domain/toasts';
+import { BeneficiosPlanPanel } from '../contenido/BeneficiosPlanPanel';
 import { aBorrador, aPeticion, type Borrador, hayErrores, MAX, validar } from '../contenido/borrador';
 import { TEXTO_CATEGORIA, TEXTO_TIPO_REQUISITO } from '../contenido/textos';
 import { useContenidoPlanAdmin, useGuardarContenidoPlan } from '../hooks/useContenidoAdmin';
@@ -407,6 +408,8 @@ export function ContenidoPlanPage() {
           </div>
         )}
       </div>
+
+      <BeneficiosPlanPanel planId={planId} />
     </div>
   );
 }

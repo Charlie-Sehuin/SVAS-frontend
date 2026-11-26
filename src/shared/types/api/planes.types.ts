@@ -1,4 +1,5 @@
 import type { Monto, FechaIso, Uuid } from './comunes.types';
+import type { BeneficioPlan, FilaBeneficio } from './beneficios.types';
 import type { CategoriaCobertura, RequisitoContratado } from './compra.types';
 
 /**
@@ -27,6 +28,8 @@ export interface ContenidoPlan {
   coberturas: CoberturaPlan[];
   exclusiones: string[];
   requisitos: RequisitoContratado[];
+  /** Solo los beneficios que el plan ofrece; lo que no está en la lista es "No incluye". */
+  beneficios: BeneficioPlan[];
   actualizadoEn: FechaIso | null;
   /** RN-46: leyenda obligatoria. */
   leyenda: string;
@@ -56,5 +59,7 @@ export interface FilaComparacion {
 export interface ComparacionPlanes {
   planes: PlanComparado[];
   filas: FilaComparacion[];
+  /** Beneficios que ofrece al menos uno de los planes comparados. */
+  beneficios: FilaBeneficio[];
   leyenda: string;
 }

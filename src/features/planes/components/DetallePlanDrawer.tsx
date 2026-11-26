@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Info } from 'lucide-react';
+import { textoBeneficio } from '../../../shared/lib/beneficios';
 import { cn } from '../../../shared/lib/utils';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogTitle } from '../../../shared/ui/dialog';
 import { Skeleton } from '../../../shared/ui/skeleton';
@@ -9,6 +10,7 @@ import { CoberturaItem } from './CoberturaItem';
 
 const PESTANAS = [
   { id: 'cubre', texto: 'Qué cubre' },
+  { id: 'beneficios', texto: 'Beneficios' },
   { id: 'no-cubre', texto: 'Qué no cubre' },
   { id: 'requisitos', texto: 'Requisitos' },
 ] as const;
@@ -107,6 +109,23 @@ export function DetallePlanDrawer({ planId, titulo, onClose }: Props) {
                     </ul>
                   )}
                 </>
+              ) : pestana === 'beneficios' ? (
+                data.beneficios.length === 0 ? (
+                  <p className="text-ink-soft">Este plan no ofrece beneficios adicionales.</p>
+                ) : (
+                  <>
+                    <p className="mb-2 text-small text-ink-soft">Extras que ofrece este plan, además de lo que cubre el seguro.</p>
+                    <ul className="divide-y divide-line">
+                      {data.beneficios.map((b) => (
+                        <li key={b.codigo} className="py-2.5">
+                          <p className="font-bold text-navy-700">{b.nombre}</p>
+                          <p className="text-ink">{textoBeneficio(b)}</p>
+                          {b.detalle ? <p className="text-small text-ink-soft">{b.detalle}</p> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )
               ) : pestana === 'no-cubre' ? (
                 <>
                   {noCubre.length > 0 ? (

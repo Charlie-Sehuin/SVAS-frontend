@@ -48,3 +48,24 @@ export function useGuardarCoberturaCatalogo() {
 
 export const useCompletitudContenido = () =>
   useQuery({ queryKey: qk.admin.contenido.completitud, queryFn: admin.obtenerCompletitudContenido });
+
+export const useBeneficiosPlanAdmin = (planId: string | undefined) =>
+  useQuery({
+    queryKey: qk.admin.contenido.beneficios(planId ?? ''),
+    queryFn: () => admin.obtenerBeneficiosPlanAdmin(planId!),
+    enabled: !!planId,
+    staleTime: 0,
+  });
+
+/** Lo guardado ya viene en la respuesta; además se refresca el contenido público (detalle y comparador). */
+export function useGuardarBeneficiosPlan(planId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Parameters<typeof admin.guardarBeneficiosPlan>[1]) => admin.guardarBeneficiosPlan(planId, body),
+    onSuccess: (r) => {
+      qc.setQueryData(qk.admin.contenido.beneficios(planId), r);
+      void qc.invalidateQueries({ queryKey: qk.planes.contenido(planId) });
+      void qc.invalidateQueries({ queryKey: ['planes', 'comparar'] });
+    },
+  });
+}

@@ -1,4 +1,5 @@
 import { Check, X } from 'lucide-react';
+import { NO_INCLUYE, textoBeneficio } from '../../../shared/lib/beneficios';
 import { cn } from '../../../shared/lib/utils';
 import type { ComparacionPlanes } from '../../../shared/types/api';
 
@@ -7,8 +8,9 @@ import type { ComparacionPlanes } from '../../../shared/types/api';
  * lector de pantalla), nunca solo el icono. En móvil la primera columna queda fija y el resto se desplaza.
  */
 export function MatrizCoberturas({ comparacion }: { comparacion: ComparacionPlanes }) {
-  const { planes, filas } = comparacion;
+  const { planes, filas, beneficios } = comparacion;
   return (
+    <>
     <div className="overflow-x-auto rounded-xl border border-line bg-surface">
       <table className="w-full min-w-[520px] border-collapse text-left">
         <caption className="sr-only">Qué cubre cada plan, cobertura por cobertura</caption>
@@ -48,5 +50,52 @@ export function MatrizCoberturas({ comparacion }: { comparacion: ComparacionPlan
         </tbody>
       </table>
     </div>
+
+    {beneficios.length > 0 ? (
+      <div className="mt-6">
+        <h3 className="mb-2 font-bold text-navy-700">Beneficios</h3>
+        <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+          <table className="w-full min-w-[520px] border-collapse text-left">
+            <caption className="sr-only">Beneficios extra de cada plan, además de lo que cubre el seguro</caption>
+            <thead className="sticky top-0 bg-surface">
+              <tr className="border-b border-line">
+                <th scope="col" className="sticky left-0 z-20 w-40 border-r border-line bg-surface p-3 text-small text-ink-soft sm:w-56">
+                  Beneficio
+                </th>
+                {planes.map((p) => (
+                  <th key={p.planId} scope="col" className="p-3 align-bottom">
+                    <span className="block text-caption font-normal text-ink-soft">{p.aseguradora}</span>
+                    <span className="block font-bold text-navy-700">Plan {p.plan}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {beneficios.map((b) => (
+                <tr key={b.codigo} className="group/fila border-b border-line transition-colors last:border-0 hover:bg-brand-50">
+                  <th
+                    scope="row"
+                    className="sticky left-0 z-10 w-40 border-r border-line bg-surface p-3 align-top font-bold text-navy-700 transition-colors group-hover/fila:bg-brand-50 sm:w-56"
+                  >
+                    {b.nombre}
+                  </th>
+                  {b.valores.map((v, i) => (
+                    <td key={planes[i]?.planId ?? i} className="p-3 align-top">
+                      {v ? (
+                        <span className="font-bold text-status-success">{textoBeneficio({ tipo: b.tipo, unidad: b.unidad, valor: v.valor })}</span>
+                      ) : (
+                        <span className="font-bold text-ink-soft">{NO_INCLUYE}</span>
+                      )}
+                      {v?.detalle ? <span className="mt-0.5 block text-small text-ink-soft">{v.detalle}</span> : null}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ) : null}
+    </>
   );
 }

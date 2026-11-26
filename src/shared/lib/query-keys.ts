@@ -71,6 +71,7 @@ export const qk = {
     },
     contenido: {
       plan: (planId: string) => ['admin', 'contenido', 'plan', planId] as const,
+      beneficios: (planId: string) => ['admin', 'contenido', 'beneficios', planId] as const,
       coberturas: ['admin', 'coberturas'] as const,
       completitud: ['admin', 'contenido', 'completitud'] as const,
     },

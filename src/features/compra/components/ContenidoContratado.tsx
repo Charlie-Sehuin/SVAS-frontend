@@ -1,4 +1,5 @@
 import { Check, X } from 'lucide-react';
+import { textoBeneficio } from '../../../shared/lib/beneficios';
 import { formatearFecha } from '../../../shared/lib/format';
 import type { ContenidoPlanContratado } from '../../../shared/types/api';
 
@@ -39,6 +40,23 @@ export function ContenidoContratado({ contenido }: { contenido: ContenidoPlanCon
           </ul>
         )}
       </section>
+
+      {contenido.beneficios && contenido.beneficios.length > 0 ? (
+        <section aria-label="Beneficios incluidos">
+          <h4 className="mb-2 font-bold text-navy-700">Beneficios incluidos</h4>
+          <ul className="space-y-1.5">
+            {contenido.beneficios.map((b) => (
+              <li key={b.codigo} className="flex items-start gap-2">
+                <Check className="mt-0.5 size-4 shrink-0 text-status-success" aria-hidden />
+                <span>
+                  {b.nombre}
+                  <span className="text-ink-soft"> · {textoBeneficio(b)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {noCubre.length > 0 || contenido.exclusiones.length > 0 ? (
         <section aria-label="Qué no cubre">
