@@ -1,5 +1,6 @@
 import type { CanalVenta, EstadoOrden, EstadoPago, ModoPago, TipoDescuento } from '../enums';
 import type { FechaIso, Monto, Uuid, Warning } from './comunes.types';
+import type { BeneficioPlan } from './beneficios.types';
 
 /**
  * Compra y pólizas (doc conexión §6 "Compra" y "Pólizas"). Todos los montos llegan como string decimal:
@@ -98,6 +99,8 @@ export interface ContenidoPlanContratado {
   coberturas: CoberturaContratada[];
   exclusiones: string[];
   requisitos: RequisitoContratado[];
+  /** Las compras anteriores a los beneficios no traen esta lista. */
+  beneficios?: BeneficioPlan[];
   congeladoEn: FechaIso;
 }
 

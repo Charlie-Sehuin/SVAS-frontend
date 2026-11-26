@@ -7,7 +7,7 @@ import { server } from '../../test/msw/server';
 import { API } from '../../test/msw/handlers';
 import { renderConProviders } from '../../test/render';
 import { Toaster } from '../../shared/ui/toaster';
-import type { CoberturaCatalogoAdmin, CompletitudPlan, ContenidoPlanAdmin } from '../../shared/types/api';
+import type { BeneficiosPlanAdmin, CoberturaCatalogoAdmin, CompletitudPlan, ContenidoPlanAdmin } from '../../shared/types/api';
 import { CoberturasCatalogoPage } from './pages/CoberturasCatalogoPage';
 import { CompletitudContenidoPage } from './pages/CompletitudContenidoPage';
 import { ContenidoPlanPage } from './pages/ContenidoPlanPage';
@@ -426,5 +426,95 @@ describe('CoberturasCatalogoPage', () => {
     await user.click(within(dialogo).getByRole('button', { name: 'Guardar' }));
     expect(await within(dialogo).findByText('Ya existe una cobertura con ese nombre')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+  });
+});
+
+
+/* ───────────────────────── Beneficios de un plan ───────────────────────── */
+
+const CATALOGO_BENEFICIOS: BeneficiosPlanAdmin['catalogo'] = [
+  { codigo: 'VISITAS_TECNICAS', nombre: 'Visitas técnicas', tipo: 'CANTIDAD', unidad: 'al año', orden: 1 },
+  { codigo: 'LAVADO', nombre: 'Lavado del auto', tipo: 'CANTIDAD', unidad: 'veces al año', orden: 6 },
+  { codigo: 'DSCTO_TALLERES', nombre: 'Descuento en talleres afiliados', tipo: 'PORCENTAJE', unidad: '% de descuento', orden: 11 },
+];
+
+const beneficiosPlan = (extra: Partial<BeneficiosPlanAdmin> = {}): BeneficiosPlanAdmin => ({
+  planId: PLAN,
+  aseguradora: 'Rímac',
+  plan: 'Oro',
+  beneficios: [{ ...CATALOGO_BENEFICIOS[0]!, valor: '4.00', detalle: null }],
+  catalogo: CATALOGO_BENEFICIOS,
+  advertencias: [],
+  ...extra,
+});
+
+const mockBeneficios = (b: BeneficiosPlanAdmin) =>
+  server.use(http.get(`${API}/admin/planes/${PLAN}/beneficios`, () => HttpResponse.json(b)));
+
+describe('Beneficios del plan (panel dentro del contenido)', () => {
+  it('marca lo que el plan ofrece y el PUT manda solo esos beneficios', async () => {
+    mockPlan(completo());
+    mockBeneficios(beneficiosPlan());
+    let cuerpo: unknown = null;
+    server.use(
+      http.put(`${API}/admin/planes/${PLAN}/beneficios`, async ({ request }) => {
+        cuerpo = await request.json();
+        return HttpResponse.json({ ...beneficiosPlan(), cambio: true });
+      }),
+    );
+    const user = userEvent.setup();
+    renderPlan();
+    const panel = await screen.findByRole('region', { name: 'Beneficios del plan' });
+
+    expect(within(panel).getByLabelText('El plan ofrece: Visitas técnicas')).toBeChecked();
+    expect(within(panel).getByLabelText('El plan ofrece: Lavado del auto')).not.toBeChecked();
+    expect(within(panel).getByRole('button', { name: /actualizar beneficios/i })).toBeDisabled();
+
+    await user.click(within(panel).getByLabelText('El plan ofrece: Lavado del auto'));
+    await user.type(within(panel).getByLabelText('Valor de Lavado del auto'), '6');
+    await user.click(within(panel).getByRole('button', { name: /actualizar beneficios/i }));
+
+    expect(await screen.findByText('Beneficios guardados')).toBeInTheDocument();
+    expect(cuerpo).toEqual({
+      beneficios: [
+        { codigo: 'VISITAS_TECNICAS', valor: 4, detalle: null },
+        { codigo: 'LAVADO', valor: 6, detalle: null },
+      ],
+    });
+  });
+
+  it('un porcentaje mayor que 100 se marca en texto y no deja guardar', async () => {
+    mockPlan(completo());
+    mockBeneficios(beneficiosPlan());
+    const user = userEvent.setup();
+    renderPlan();
+    const panel = await screen.findByRole('region', { name: 'Beneficios del plan' });
+
+    await user.click(within(panel).getByLabelText('El plan ofrece: Descuento en talleres afiliados'));
+    await user.type(within(panel).getByLabelText('Valor de Descuento en talleres afiliados'), '150');
+    expect(within(panel).getByText('No puede pasar de 100')).toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: /actualizar beneficios/i })).toBeDisabled();
+  });
+
+  it('muestra el aviso de escalera cuando el plan superior no incluye lo del inferior', async () => {
+    mockPlan(completo());
+    mockBeneficios(
+      beneficiosPlan({
+        advertencias: [
+          {
+            codigo: 'LAVADO',
+            nombre: 'Lavado del auto',
+            planBajo: 'Plata',
+            planAlto: 'Oro',
+            motivo: 'el plan superior no incluye este beneficio',
+            mensaje: '«Lavado del auto»: el plan superior no incluye este beneficio (Plata → Oro).',
+          },
+        ],
+      }),
+    );
+    renderPlan();
+    const panel = await screen.findByRole('region', { name: 'Beneficios del plan' });
+    expect(within(panel).getByText(/no cumple la escalera de beneficios/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/«Lavado del auto»: el plan superior no incluye este beneficio/)).toBeInTheDocument();
   });
 });

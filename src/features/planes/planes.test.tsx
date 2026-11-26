@@ -61,6 +61,10 @@ const contenido = (p: (typeof PLANES)[number]): ContenidoPlan => ({
   ],
   exclusiones: ['Conducir con alcohol sobre el límite legal'],
   requisitos: [{ tipo: 'CONDUCTOR', texto: 'Conductor habitual con licencia vigente', obligatorio: true }],
+  beneficios: [
+    { codigo: 'VISITAS_TECNICAS', nombre: 'Visitas técnicas', tipo: 'CANTIDAD', unidad: 'al año', valor: '4.00', detalle: null },
+    { codigo: 'COMBUSTIBLE', nombre: 'Combustible en grifos aliados', tipo: 'PRECIO', unidad: 'USD por litro', valor: '1.00', detalle: 'Solo en grifos aliados' },
+  ],
   actualizadoEn: '2026-11-01T10:00:00-05:00',
   leyenda: LEYENDA,
 });
@@ -80,6 +84,25 @@ const comparacion = (): ComparacionPlanes => ({
         { incluida: true, detalle: 'Hasta USD 100,000' },
         { incluida: true, detalle: 'Hasta USD 200,000' },
       ],
+    },
+  ],
+  beneficios: [
+    {
+      codigo: 'VISITAS_TECNICAS',
+      nombre: 'Visitas técnicas',
+      tipo: 'CANTIDAD',
+      unidad: 'al año',
+      valores: [
+        { valor: '4.00', detalle: null },
+        { valor: '5.00', detalle: null },
+      ],
+    },
+    {
+      codigo: 'LAVADO',
+      nombre: 'Lavado del auto',
+      tipo: 'CANTIDAD',
+      unidad: 'veces al año',
+      valores: [null, { valor: '6.00', detalle: null }],
     },
   ],
   leyenda: LEYENDA,
@@ -151,6 +174,35 @@ describe('Detalle del plan', () => {
     expect(within(panel).getByText('Conductor habitual con licencia vigente')).toBeInTheDocument();
   });
 
+  it('"Beneficios" muestra lo que ofrece el plan, con su valor como lo lee el cliente', async () => {
+    mockCotizacion();
+    server.use(http.get(`${API}/planes/${PLANES[0]!.planId}/contenido`, () => HttpResponse.json(contenido(PLANES[0]!))));
+    const user = userEvent.setup();
+    renderComparativo();
+
+    await user.click(within(await waitForTarjeta('Oro')).getByRole('button', { name: 'Ver detalle' }));
+    const panel = await screen.findByRole('dialog');
+    await user.click(await within(panel).findByRole('tab', { name: 'Beneficios' }));
+    expect(within(panel).getByText('Visitas técnicas')).toBeInTheDocument();
+    expect(within(panel).getByText('4 al año')).toBeInTheDocument();
+    expect(within(panel).getByText('USD 1,00 por litro')).toBeInTheDocument();
+    expect(within(panel).getByText('Solo en grifos aliados')).toBeInTheDocument();
+  });
+
+  it('un plan sin beneficios lo dice', async () => {
+    mockCotizacion();
+    server.use(
+      http.get(`${API}/planes/${PLANES[0]!.planId}/contenido`, () => HttpResponse.json({ ...contenido(PLANES[0]!), beneficios: [] })),
+    );
+    const user = userEvent.setup();
+    renderComparativo();
+
+    await user.click(within(await waitForTarjeta('Oro')).getByRole('button', { name: 'Ver detalle' }));
+    const panel = await screen.findByRole('dialog');
+    await user.click(await within(panel).findByRole('tab', { name: 'Beneficios' }));
+    expect(within(panel).getByText('Este plan no ofrece beneficios adicionales.')).toBeInTheDocument();
+  });
+
   it('las flechas del teclado cambian de pestaña', async () => {
     mockCotizacion();
     server.use(http.get(`${API}/planes/${PLANES[0]!.planId}/contenido`, () => HttpResponse.json(contenido(PLANES[0]!))));
@@ -162,7 +214,7 @@ describe('Detalle del plan', () => {
     const cubre = within(panel).getByRole('tab', { name: 'Qué cubre' });
     cubre.focus();
     await user.keyboard('{ArrowRight}');
-    expect(within(panel).getByRole('tab', { name: 'Qué no cubre' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(panel).getByRole('tab', { name: 'Beneficios' })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{ArrowLeft}');
     expect(cubre).toHaveAttribute('aria-selected', 'true');
   });
@@ -273,6 +325,15 @@ describe('CompararPlanesPage', () => {
     expect(screen.getByText('Total que cubre: 1 de 2')).toBeInTheDocument();
     expect(screen.getByText('Total que cubre: 2 de 2')).toBeInTheDocument();
     expect(screen.getByText(LEYENDA)).toBeInTheDocument();
+
+    // Beneficios: lo que ofrece cada plan y "No incluye" donde no lo ofrece.
+    const beneficios = screen.getByRole('table', { name: /beneficios extra de cada plan/i });
+    const visitas = within(beneficios).getByRole('row', { name: /visitas técnicas/i });
+    expect(within(visitas).getByText('4 al año')).toBeInTheDocument();
+    expect(within(visitas).getByText('5 al año')).toBeInTheDocument();
+    const lavado = within(beneficios).getByRole('row', { name: /lavado del auto/i });
+    expect(within(lavado).getByText('No incluye')).toBeInTheDocument();
+    expect(within(lavado).getByText('6 veces al año')).toBeInTheDocument();
   });
 
   it('copia el enlace al compartir', async () => {

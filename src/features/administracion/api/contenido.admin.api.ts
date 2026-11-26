@@ -1,8 +1,11 @@
 import { api } from '../../../shared/lib/api-client';
 import type {
+  BeneficiosPlanAdmin,
   CoberturaCatalogoAdmin,
   CompletitudContenido,
   ContenidoPlanAdmin,
+  GuardarBeneficiosRequest,
+  GuardarBeneficiosResponse,
   GuardarContenidoRequest,
   GuardarContenidoResponse,
   GuardarCoberturaCatalogoRequest,
@@ -23,3 +26,10 @@ export const guardarCoberturaCatalogo = (codigo: string, body: GuardarCoberturaC
   api.put(`admin/coberturas/${codigo}`, { json: body }).json<CoberturaCatalogoAdmin>();
 
 export const obtenerCompletitudContenido = () => api.get('admin/contenido-planes/completitud').json<CompletitudContenido>();
+
+/** Beneficios de un plan (solo lo que ofrece) y el catálogo de beneficios que se pueden asignar. */
+export const obtenerBeneficiosPlanAdmin = (planId: string) => api.get(`admin/planes/${planId}/beneficios`).json<BeneficiosPlanAdmin>();
+
+/** Reemplaza los beneficios del plan en una transacción; avisa si el plan superior no cumple la escalera. */
+export const guardarBeneficiosPlan = (planId: string, body: GuardarBeneficiosRequest) =>
+  api.put(`admin/planes/${planId}/beneficios`, { json: body }).json<GuardarBeneficiosResponse>();
